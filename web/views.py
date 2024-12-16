@@ -4,7 +4,7 @@ from web.models import Carousel
 
 def home(request):
     carousel_items = Carousel.objects.all()
-    return render(request, 'home.html', {'carousel_items': carousel_items})
+    return render(request, 'index.html', {'carousel_items': carousel_items})
 
 def about(request):
     return render(request, 'about.html')  # Rendering the about page template
