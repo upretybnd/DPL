@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h1>{{ thread.title }}</h1>
+  <p>{{ thread.content }}</p>
+  <p>Posted by {{ thread.author.username }} on {{ thread.created_at }}</p>
+
+  <h3>Replies</h3>
+  <ul>
+    {% for reply in replies %}
+      <li>{{ reply.author.username }}: {{ reply.content }} ({{ reply.created_at }})</li>
+    {% endfor %}
+  </ul>
+
+  <!-- Reply form -->
+  <h4>Post a Reply</h4>
+  <form method="POST">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="content">Your Reply:</label>
+      <textarea name="content" id="content" class="form-control" rows="4" required>{{ request.POST.content }}</textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit Reply</button>
+  </form>
+
+  {% if messages %}
+    <ul>
+      {% for message in messages %}
+        <li class="alert alert-info">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+  
+{% endblock %}

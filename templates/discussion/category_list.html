@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Category Section Start -->
+<div class="container-fluid bg-light py-3 mb-4">
+    <div class="container-fluid bg-light py-2 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-12 d-flex justify-content-start align-items-center">
+                    <p class="mb-0 me-2">You are here:</p>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="{% url 'home' %}" class="text-primary">Home</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Categories</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-xxl py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-12">
+                <div class="wow fadeInUp shadow p-5 bg-light rounded" data-wow-delay="0.1s">
+                    <h2 class="text-center mb-4 text-primary">Categories</h2>
+
+                    <!-- Table to display Categories and Threads -->
+                    <a href="{% url 'create_thread' %}" class="btn btn-primary mb-4">Create New Thread</a>
+
+                    <table class="table table-bordered bg-light table-striped">
+                        <thead>
+                            <tr class="text-primary">
+                                <th scope="col">Category</th>
+                                <th scope="col">Latest Threads</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for category in categories %}
+                            <tr class="category-item">
+                                <td colspan="2">
+                                    <h3 class="category-name text-primary">
+                                        <a href="{% url 'category_threads' category_id=category.id %}" class="text-primary">{{ category.name }}</a>
+                                    </h3>
+
+                                    <!-- Threads under each category -->
+                                    <table class="table table-bordered bg-light table-striped">
+                                        <thead>
+                                            <tr class="text-secondary">
+                                                <th scope="col">Thread Title</th>
+                                                <th scope="col">Author</th>
+                                                <th scope="col">Replies</th>
+                                                <th scope="col">Views</th>
+                                                <th scope="col">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for thread in category.latest_threads %}
+                                            <tr class="thread-item">
+                                                <td>
+                                                    <a href="{% url 'thread_detail' thread.id %}" class="text-dark font-weight-bold">{{ thread.title }}</a>
+                                                </td>
+<td><a href="{% url 'profile' username=thread.author.username %}">{{ thread.author.username }}</a></td>
+                                                <td>{{ thread.replies.count }}</td>
+                                                <td>{{ thread.views }}</td>
+                                                <td>
+                                                    <a href="{% url 'thread_detail' thread.id %}" class="text-secondary">👁️</a>
+                                                </td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr>
+                                                <td colspan="5">No threads in this category yet.</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Category Section End -->
+<style>
+    .text-dark {
+    color: #343a40; /* Darker color for text */
+}
+
+.font-weight-bold {
+    font-weight: 700; /* Bold font */
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #f9f9f9; /* Light grey for table rows */
+}
+
+.table-bordered {
+    border: 1px solid #ddd; /* Light border */
+}
+
+</style>
+{% endblock %}

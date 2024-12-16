@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid bg-light py-3 mb-4">
+    <div class="container-fluid bg-light py-2 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-12 d-flex justify-content-start align-items-center">
+                    <p class="mb-0 me-2">You are here:</p>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'program_list' %}">Progarm</a></li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container-xxl py-5">
+    <div class="container">
+        <div class="text-center mx-auto pb-4 wow fadeInUp" data-wow-delay="0.1s" style="max-width: 600px;">
+            <h1 class="fw-medium text-uppercase text-primary mb-2">Our Programs</h1>
+            <p>"DPL chapters across the nation actively organize and conduct a wide range of events aimed at fostering education, community engagement, and personal development."</p>
+        </div>
+
+        <!-- Filter Section -->
+        <form method="get" class="mb-4">
+            <div class="row">
+                <div class="col-md-3">
+                    <select class="form-control" name="branch">
+                        <option value="">Select Branch</option>
+                        {% for branch in branches %}
+                            <option value="{{ branch.branch_id }}" {% if branch.branch_id == selected_branch %} selected {% endif %}>{{ branch.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="coordinator" placeholder="Coordinator" value="{{ selected_coordinator }}">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control" name="year" placeholder="Year" value="{{ selected_year }}">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control" name="month" placeholder="Month (1-12)" value="{{ selected_month }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Programs List -->
+        <div class="row gy-5 gx-4">
+            {% for program in page_obj %}
+                <div class="col-md-6 col-lg-4 wow fadeInUp" data-wow-delay="0.1s">
+                    <div class="service-item">
+                        <img class="img-fluid" src="{{ program.image.url }}" alt="{{ program.title }}">
+                        <div class="service-img">
+                            <img class="img-fluid" src="{{ program.image.url }}" alt="{{ program.title }}">
+                        </div>
+                        <div class="service-detail">
+                            <div class="service-title">
+                                <hr class="w-25">
+                                <h3 class="mb-0">{{ program.title }}</h3><br>
+                                <h5 class="mb-0">Coordinator: {{ program.coordinator_name }}</h5>
+                                <hr class="w-25">
+                            </div>
+                            <div class="service-text">
+                                <p class="text-white mb-0">{{ program.description }}</p>
+                            </div>
+                        </div>
+                        <a class="btn btn-light" href="{% url 'program_detail' program.id %}">Read More</a>
+                    </div>
+                </div>
+            {% empty %}
+                <p>No programs available.</p>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination Links -->
+        <div class="pagination-container text-center mt-4">
+            <span class="pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1&branch={{ selected_branch }}&coordinator={{ selected_coordinator }}&year={{ selected_year }}&month={{ selected_month }}">First</a>
+                    <a href="?page={{ page_obj.previous_page_number }}&branch={{ selected_branch }}&coordinator={{ selected_coordinator }}&year={{ selected_year }}&month={{ selected_month }}">Previous</a>
+                {% endif %}
+                <span class="current-page">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}&branch={{ selected_branch }}&coordinator={{ selected_coordinator }}&year={{ selected_year }}&month={{ selected_month }}">Next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}&branch={{ selected_branch }}&coordinator={{ selected_coordinator }}&year={{ selected_year }}&month={{ selected_month }}">Last</a>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+</div>
+{% endblock %}

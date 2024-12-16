@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<!-- Sign-Up Section Start -->
+<div class="container-fluid bg-light py-3 mb-4">
+    <div class="container-fluid bg-light py-2 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-12 d-flex justify-content-start align-items-center">
+                    <p class="mb-0 me-2">You are here:</p>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Sign Up</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container-xxl py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="wow fadeInUp shadow p-5 bg-light rounded" data-wow-delay="0.1s">
+                    <h2 class="text-center mb-4 text-primary">Create Your Account</h2>
+
+                    <!-- Sign-Up Form -->
+                    <form action="{% url 'sign_up' %}" method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="fullName" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="fullName" name="fullName"
+                                   placeholder="Enter your full name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                   placeholder="Enter your email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password"
+                                   placeholder="Create a password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword"
+                                   placeholder="Re-enter your password" required>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="terms" required>
+                            <label class="form-check-label" for="terms">I agree to the <a href="/terms"
+                                                                                          class="text-primary">Terms and
+                                Conditions</a>.</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 py-2">Sign Up</button>
+                    </form>
+                    {% if messages %}
+                    <div id="success-message" class="mt-3">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            <p>{{ message }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Redirect to Log-In -->
+                    <p class="text-center mt-3">Already have an account? <a href="{% url 'login' %}"
+                                                                            class="text-primary">Log In</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="mt-2">
+    <div class="wow fadeInUp shadow p-5 bg-light rounded" data-wow-delay="0.1s">
+        <h2 class="text-center mb-4 text-primary">Create Your Account</h2>
+        <div class="wow fadeInUp shadow p-5 bg-light rounded" data-wow-delay="0.1s">
+            <h2 class="text-center mb-4 text-primary">Create Your Account</h2>
+        </div>
+    </div>
+</div>
+ {% endblock %}

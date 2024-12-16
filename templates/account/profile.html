@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Profile Header Section -->
+    <div class="row">
+        <!-- Left Section (Avatar, Stats) -->
+        <div class="col-md-3 text-center">
+            <img src="{% if user.profile.profile_picture %}{{ user.profile.profile_picture.url }}{% else %}/static/images/default-avatar.png{% endif %}"
+                 alt="Profile Picture" class="profile-avatar mb-3">
+            <h4>{{ user.profile.full_name }}</h4> <!-- Display Full Name -->
+            <p class="text-muted">@{{ user.username }}</p>
+            <p><strong>{{ title|safe }}</strong></p>
+
+            <!-- Displaying some badges or stats (can be adjusted based on actual data) -->
+            {% if user.visitstreak.visit_streak == 1 %}
+                <p> <strong>Visit Streak:</strong> Welcome! Your first login.</p>
+            {% else %}
+                <p> <strong>Visit Streak:</strong> {{ user.visitstreak.visit_streak }} days</p>
+            {% endif %}
+
+            <!-- User Stats (Posts, Comments, Joined, Last Visited) -->
+            <div class="mt-3 text-start">
+                <p><i class="fa fa-pencil-alt"></i> <strong>Posts:</strong> {{ post_count }}</p>
+                <p><i class="fa fa-comments"></i> <strong>Comments:</strong> {{ user.replies.count }}</p>
+                <p><i class="fa fa-calendar-alt"></i> <strong>Joined:</strong> {{ user.date_joined|date:"d/m/Y" }}</p>
+                <p><i class="fa fa-clock"></i> <strong>Last Login:</strong> {{ days_since_last_login }} days ago</p>
+            </div>
+        </div>
+
+        <!-- Right Section (Tabs for Wall, Posts, and other info) -->
+        <div class="col-md-9">
+            <!-- Tabs Navigation -->
+            <ul class="nav nav-tabs" id="profileTab" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="wall-tab" data-bs-toggle="tab" href="#wall" role="tab">My Wall</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="posts-tab" data-bs-toggle="tab" href="#posts" role="tab">My Bio</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="preferences-tab" data-bs-toggle="tab" href="#preferences" role="tab">My Address</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="gender-tab" data-bs-toggle="tab" href="#gender" role="tab">Gender</a>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content mt-3" id="profileTabContent">
+                <div class="tab-pane fade show active" id="wall" role="tabpanel">
+                    <div class="my-wall-box d-flex flex-column p-3 border rounded">
+                        <h5>What's on My Mind?</h5>
+                        <div class="wall-content mt-2">
+                            {{ user.profile.wall }}
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="posts" role="tabpanel">
+                    <h5> My Bio</h5>
+                    <div class="wall-content mt-2">
+                        {{ user.profile.bio }}
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="preferences" role="tabpanel">
+                    <h5> I reside in</h5>
+                    <div class="wall-content mt-2">
+                        {{ user.profile.address }}
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="gender" role="tabpanel">
+                    <h5>Gender</h5>
+                    <div class="wall-content mt-2">
+                        {{ user.profile.gender }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Button -->
+    {% if not edit_mode %}
+        <a href="?edit=true" class="btn btn-secondary mt-3">Edit Profile</a>
+    {% endif %}
+
+    <!-- Edit Profile Form (Only visible when `edit_mode` is true) -->
+    {% if edit_mode %}
+        <form method="POST" enctype="multipart/form-data" class="mt-3">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="profile_picture" class="form-label">Profile Picture</label>
+                <input type="file" class="form-control" id="profile_picture" name="profile_picture">
+            </div>
+            <div class="mb-3">
+                <label for="full-name" class="form-label">Full Name</label>
+                <input type="text" class="form-control" id="full-name" name="full_name" value="{{ user.profile.full_name }}">
+            </div>
+            <div class="mb-3">
+                <label for="bio" class="form-label">Bio</label>
+                <textarea class="form-control" id="bio" name="bio">{{ user.profile.bio }}</textarea>
+            </div>
+            <div class="mb-3">
+                <label for="gender" class="form-label">Gender</label>
+                <select class="form-control" id="gender" name="gender">
+                    <option value="Male" {% if user.profile.gender == 'Male' %}selected{% endif %}>Male</option>
+                    <option value="Female" {% if user.profile.gender == 'Female' %}selected{% endif %}>Female</option>
+                    <option value="Other" {% if user.profile.gender == 'Other' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="address" class="form-label">Address</label>
+                <input type="text" class="form-control" id="address" name="address" value="{{ user.profile.address }}">
+            </div>
+            <div class="mb-3">
+                <label for="wall" class="form-label">Wall</label>
+                <textarea class="form-control" id="wall" name="wall">{{ user.profile.wall }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="?edit=false" class="btn btn-secondary">Cancel Edit</a>
+        </form>
+    {% endif %}
+</div>
+
+<!-- Custom CSS -->
+<style>
+    .my-wall-box {
+        display: flex;
+        flex-direction: column; /* Stack items vertically */
+        padding: 15px;
+        border: 1px solid #ddd; /* Add border for box */
+        border-radius: 8px;
+        background-color: #f9f9f9; /* Light background for contrast */
+    }
+
+    .my-wall-box h5 {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .wall-content {
+        font-size: 14px;
+        color: #555;
+        margin-top: 5px;
+    }
+
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 3px solid #ccc;
+        margin: 0 auto;
+    }
+
+    .badges span {
+        display: inline-block;
+        font-size: 1.2rem;
+        margin: 0 5px;
+    }
+
+    .nav-tabs .nav-link.active {
+        background-color: #f8f9fa;
+        border-color: #dee2e6 #dee2e6 #f8f9fa;
+    }
+
+    .tab-content h5 {
+        margin-bottom: 15px;
+        font-size: 1.25rem;
+    }
+</style>
+{% endblock %}

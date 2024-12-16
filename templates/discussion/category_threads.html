@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Categories</li>
+        </ol>
+    </nav>
+
+    <h1 class="category-title">{{ category.name }} Threads</h1>
+     <!-- Table to display Categories and Threads -->
+     <a href="{% url 'create_thread' %}" class="btn btn-primary mb-4">Create New Thread</a>
+
+
+    <!-- Table to display Threads under the Category -->
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col">Thread Title</th>
+                <th scope="col">Author</th>
+                <th scope="col">Replies</th>
+                <th scope="col">Views</th>
+                <th scope="col">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for thread in threads %}
+            <tr>
+                <td><a href="{% url 'thread_detail' thread.id %}">{{ thread.title }}</a></td>
+                <td>
+                    <a href="{% url 'profile' username=thread.author.username %}" class="text-primary">
+                        {{ thread.author.username }}
+                    </a>
+                </td>
+                <td>{{ thread.replies.count }}</td>
+                <td>{{ thread.views }}</td>
+                <td>
+                    <a href="{% url 'thread_detail' thread.id %}">👁️</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No threads in this category yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Pagination Controls -->
+    <div class="pagination">
+        {% if threads.has_previous %}
+        <a href="?page=1" class="btn btn-pagination">First</a>
+        <a href="?page={{ threads.previous_page_number }}" class="btn btn-pagination">Previous</a>
+        {% endif %}
+        <span>Page {{ threads.number }} of {{ threads.paginator.num_pages }}</span>
+        {% if threads.has_next %}
+        <a href="?page={{ threads.next_page_number }}" class="btn btn-pagination">Next</a>
+        <a href="?page={{ threads.paginator.num_pages }}" class="btn btn-pagination">Last</a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Inline CSS -->
+<style>
+    .breadcrumb {
+        background-color: #f8f9fa;
+        margin-bottom: 20px;
+    }
+
+    .breadcrumb-item a {
+        text-decoration: none;
+    }
+
+    .breadcrumb-item.active {
+        color: #6c757d;
+    }
+
+    .category-title {
+        margin-top: 20px;
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    .category-name a {
+        text-decoration: none;
+        color: #007bff;
+        font-weight: bold;
+    }
+
+    .category-name a:hover {
+        text-decoration: underline;
+    }
+
+    .table th, .table td {
+        vertical-align: middle;
+    }
+
+    .btn-pagination {
+        margin: 5px;
+        padding: 5px 10px;
+        font-size: 14px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 3px;
+    }
+
+    .btn-pagination:hover {
+        background-color: #0056b3;
+    }
+</style>
+
+{% endblock %}

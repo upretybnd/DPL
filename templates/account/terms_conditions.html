@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<!-- Main Content -->
+<div class="container-fluid bg-light py-3 mb-4">
+    <div class="container-fluid bg-light py-2 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-12 d-flex justify-content-start align-items-center">
+                    <p class="mb-0 me-2">You are here:</p>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Terms & Conditions</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <h1 class> Terms & Conditions </h1>
+
+            <div class="col-lg-8">
+                <p class="fw-bold">Last Updated: 2024/12/04</p>
+                <p>Welcome to <b>Dynamic Public Library</b>. By signing up and using our services, you agree to comply
+                    with the following terms and conditions. Please read them carefully.</p>
+
+                <hr class="my-4">
+
+                <!-- Section 1 -->
+                <h4 class="fw-bold">1. Website Sign-Up vs. Library Membership</h4>
+                <p>Signing up or logging in to the website is <b>distinct from being a library member</b>. Website
+                    accounts are for accessing online features like forums, program updates, or resource searches.</p>
+                <p>If you are not a library member, you must complete the <a href="#" class="text-primary">Library Membership
+                        Registration Form</a>.</p>
+
+                <hr class="my-4">
+
+                <!-- Section 2 -->
+                <h4 class="fw-bold">2. Membership Eligibility</h4>
+                <p>Membership is open to all individuals of any age groups. Members must provide accurate and up-to-date information during registration.</p>
+
+                <hr class="my-4">
+
+                <!-- Section 3 -->
+                <h4 class="fw-bold">3. Library Resources Usage</h4>
+                <ul>
+                    <li>Borrowing physical books, accessing e-resources, and using digital tools is exclusively for
+                        registered members.</li>
+                    <li>Borrowed materials must be returned by the due date to avoid fines.</li>
+                    <li>Unauthorized duplication or sharing of digital content is prohibited.</li>
+                </ul>
+
+                <hr class="my-4">
+
+                <!-- Section 4 -->
+                <h4 class="fw-bold">4. Account Responsibility</h4>
+                <p>Users are responsible for maintaining the confidentiality of their login credentials and for any
+                    activity conducted through their account. Notify us immediately if you suspect unauthorized access.
+                </p>
+
+                <hr class="my-4">
+
+                <!-- Section 5 -->
+                <h4 class="fw-bold">5. Privacy Policy</h4>
+                <p>We collect and process your personal information to provide library services and online features.
+                    Refer to our <a href="#" class="text-primary">Privacy Policy</a> for details.</p>
+
+                <hr class="my-4">
+
+                <!-- CTA -->
+                <div class="alert alert-primary mt-5" role="alert">
+                    Not a library member yet? <a href="#" class="fw-bold text-decoration-none">Fill out the registration
+                        form</a> to become a member today!
+                </div>
+            </div>
+        </h1>
+    </div>
+    </div>
+{% endblock %}

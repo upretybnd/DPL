@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<!-- Main Content -->
+<div class="container-fluid bg-light py-3 mb-4">
+    <div class="container-fluid bg-light py-2 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-12 d-flex justify-content-start align-items-center">
+                    <p class="mb-0 me-2">You are here:</p>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Cookie</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <h1 class> Cookie Policy </h1>
+
+            <div class="col-lg-8">
+                <p class="fw-bold">Last Updated:2024/12/05</p>
+                <p>This Cookie Policy explains how <b>Dynamic Public Library</b> uses cookies and similar technologies to enhance your browsing experience, analyze website usage, and personalize content.</p>
+
+                <hr class="my-4">
+
+                <!-- Section 1 -->
+                <h4 class="fw-bold">1. What Are Cookies?</h4>
+                <p>Cookies are small text files placed on your device by a website. They help the website recognize your device and store information about your preferences and activities.</p>
+
+                <hr class="my-4">
+
+                <!-- Section 2 -->
+                <h4 class="fw-bold">2. Types of Cookies We Use</h4>
+                <p>We use the following types of cookies:</p>
+                <ul>
+                    <li><b>Essential Cookies:</b> These cookies are necessary for the website to function properly and cannot be disabled. For example, cookies that allow you to log in securely.</li>
+                    <li><b>Performance Cookies:</b> These cookies collect information about how you use our website, such as which pages you visit most often, helping us improve user experience.</li>
+                    <li><b>Functional Cookies:</b> These cookies remember your preferences, such as language settings, to provide a personalized experience.</li>
+                    <li><b>Analytics and Third-Party Cookies:</b> These cookies help us analyze website traffic and track user interactions. They may also include cookies from third-party providers like Google Analytics.</li>
+                </ul>
+
+                <hr class="my-4">
+
+                <!-- Section 3 -->
+                <h4 class="fw-bold">3. How We Use Cookies</h4>
+                <p>We use cookies to:</p>
+                <ul>
+                    <li>Provide essential website functionality.</li>
+                    <li>Analyze and improve website performance.</li>
+                    <li>Customize user experiences based on preferences.</li>
+                    <li>Understand how users interact with our content.</li>
+                </ul>
+
+                <hr class="my-4">
+
+                <!-- Section 4 -->
+                <h4 class="fw-bold">4. Managing Cookies</h4>
+                <p>You can manage or disable cookies through your browser settings. Note that disabling cookies may limit your ability to use certain features of the website.</p>
+                <p>Here are links to manage cookies in popular browsers:</p>
+                <ul>
+                    <li><a href="https://support.google.com/chrome/answer/95647" target="_blank" class="text-primary">Google Chrome</a></li>
+                    <li><a href="https://support.mozilla.org/en-US/kb/enable-and-disable-cookies-website-preferences" target="_blank" class="text-primary">Mozilla Firefox</a></li>
+                    <li><a href="https://support.apple.com/en-us/HT201265" target="_blank" class="text-primary">Safari</a></li>
+                    <li><a href="https://support.microsoft.com/en-us/topic/delete-and-manage-cookies-168dab11-0753-043d-7c16-ede5947fc64d" target="_blank" class="text-primary">Microsoft Edge</a></li>
+                </ul>
+
+                <hr class="my-4">
+
+                <!-- Section 5 -->
+                <h4 class="fw-bold">5. Third-Party Cookies</h4>
+                <p>We may include content or links from third parties on our website. These third parties may set cookies on your device. We encourage you to review the cookie policies of these third parties.</p>
+
+                <hr class="my-4">
+
+                <!-- Section 6 -->
+                <h4 class="fw-bold">6. Updates to This Cookie Policy</h4>
+                <p>We may update this policy from time to time. Changes will be posted on this page, and where appropriate, notified via email or website banner.</p>
+
+                <hr class="my-4">
+
+                <!-- CTA -->
+                <div class="alert alert-primary mt-5" role="alert">
+                    Have questions about our Cookie Policy? <a href="{% url 'contact' %}" class="fw-bold text-decoration-none">Contact us</a> for more information.
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

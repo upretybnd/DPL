@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="container-xxl py-5 bg-light">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <img src="{{ branch.main_image.url }}" alt="{{ branch.name }}" class="img-fluid rounded">
+            </div>
+            <div class="col-lg-6">
+                <div class="text-start mx-auto">
+                    <p class="fw-medium text-uppercase text-primary mb-2">{{ branch.member_name }}</p>
+                    <h2 class="display-5 mb-4">About DPL Damak</h2>
+                    <p class="mb-4">{{ branch.description }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Team Start -->
+<div class="container-xxl py-5">
+    <div class="container">
+        <div class="text-center mx-auto wow fadeInUp" data-wow-delay="0.1s" style="max-width: 600px;">
+            <p class="fw-medium text-uppercase text-primary mb-2">Board of Directors</p>
+            <h1 class="display-5 mb-5">DPL Damak Board-2024</h1>
+        </div>
+        <div class="row g-4">
+            {% for member in branch.branch_teams.all %}
+                <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
+                    <div class="team-item border border-3" style="border-color: #ADD8E6; border-radius: 15px; overflow: hidden; position: relative;">
+                        <!-- Image with hover effect -->
+                        <div class="image-container">
+                            <img class="img-fluid w-100" src="{{ member.member_image.url }}" alt="{{ member.member_name }}" style="height: 300px; object-fit: cover; transition: transform 0.3s ease-in-out;">
+                        </div>
+                        <div class="team-info p-4 text-center">
+                            <!-- Name in primary color -->
+                            <h5 class="fw-bold mb-2 text-primary" style="transition: color 0.3s ease;">
+                                {{ member.member_name }}
+                            </h5>
+                            <!-- Position in secondary color -->
+                            <span class="text-secondary d-block mb-3" style="font-weight: 600;">
+                                {{ member.designation }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <p>No team members found for this branch.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+<!-- Team End -->
+
+
+
+<!-- Past Presidents Start -->
+<div class="container py-5" style="min-height: 100vh;">
+    <div class="text-center mx-auto wow fadeInUp" data-wow-delay="0.1s" style="max-width: 600px;">
+        <h5 class="display-5 mb-5">Past Presidents</h5>
+    </div>
+    <div class="row justify-content-center align-items-center g-4">
+        <!-- Charter President -->
+        <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
+            <div class="team-item border border-3" style="border-color: #ADD8E6; border-radius: 15px; overflow: hidden; position: relative;">
+                <div class="image-container">
+                    <img class="img-fluid w-100" src="#" alt="Charter President" style="height: 300px; object-fit: cover; transition: transform 0.3s ease-in-out;">
+                </div>
+                <div class="team-info p-4 text-center">
+                    <h5 class="fw-bold mb-2 text-primary">name</h5>
+                    <span class="text-secondary d-block mb-3" style="font-weight: 600;">Charter President</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Past President -->
+        <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
+            <div class="team-item border border-3" style="border-color: #ADD8E6; border-radius: 15px; overflow: hidden; position: relative;">
+                <div class="image-container">
+                    <img class="img-fluid w-100" src="#" alt="Past President" style="height: 300px; object-fit: cover; transition: transform 0.3s ease-in-out;">
+                </div>
+                <div class="team-info p-4 text-center">
+                    <h5 class="fw-bold mb-2 text-primary">name</h5>
+                    <span class="text-secondary d-block mb-3" style="font-weight: 600;">Past President</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Past Presidents End -->
+
+<!-- Add CSS for Hover and Styling -->
+<style>
+    .team-item {
+        transition: all 0.3s ease-in-out;
+        background-color: #ffffff;
+    }
+    .team-item:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        border-color: #87CEEB; /* Slightly darker blue on hover */
+    }
+    .image-container img:hover {
+        transform: scale(1.05);
+    }
+</style>
+{% endblock %}

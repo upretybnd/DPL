@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Donate Us Section Start -->
+<div class="container-xxl py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 wow fadeInUp shadow p-5 bg-light rounded" data-wow-delay="0.1s">
+                <h2 class="text-center mb-4 text-primary">Support Dynamic Public Library</h2>
+                <p class="text-center mb-4">
+                    Your generous donation helps us to provide better resources, host community events, and promote literacy for everyone. 
+                    Together, we can make a difference!
+                </p>
+                
+                <!-- Donate Form -->
+                <form action="/donate" method="POST">
+                    {% csrf_token %}
+                    
+                    <!-- Full Name -->
+                    <div class="mb-3">
+                        <label for="fullName" class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="fullName" name="fullName" placeholder="Enter your full name" required>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="text" class="form-control" id="phone" name="phone" placeholder="Enter your phone number" required>
+                    </div>
+
+                    <!-- Donation Amount -->
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Donation Amount</label>
+                        <input type="number" class="form-control" id="amount" name="amount" placeholder="Enter amount (in NPR)" required>
+                    </div>
+
+                    <!-- Message -->
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Message (Optional)</label>
+                        <textarea class="form-control" id="message" name="message" rows="4" placeholder="Leave a message..."></textarea>
+                    </div>
+
+                    <!-- Payment Method -->
+                    <div class="mb-3">
+                        <label for="paymentMethod" class="form-label">Payment Method</label>
+                        <select class="form-control" id="paymentMethod" name="paymentMethod" required>
+                            <option value="esewa">eSewa</option>
+                            <option value="khalti">Khalti</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                        </select>
+                    </div>
+
+                    <!-- Upload Payment Proof -->
+                    <div class="mb-3">
+                        <label for="paymentProof" class="form-label">Upload Payment Proof (Optional)</label>
+                        <input type="file" class="form-control" id="paymentProof" name="paymentProof" accept="image/*">
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-primary w-100 py-2">Donate Now</button>
+                </form>
+
+                <!-- Donation Information -->
+                <p class="text-center mt-4">
+                    For bank transfers, please use the following details:
+                </p>
+                <ul>
+                    <li><strong>Bank Name:</strong> XYZ Bank</li>
+                    <li><strong>Account Name:</strong> Dynamic Public Library</li>
+                    <li><strong>Account Number:</strong> 1234567890</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Donate Us Section End -->
+{% endblock %}

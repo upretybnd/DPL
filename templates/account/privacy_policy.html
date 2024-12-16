@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<!-- Main Content -->
+<div class="container-fluid bg-light py-3 mb-4">
+    <div class="container-fluid bg-light py-2 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-12 d-flex justify-content-start align-items-center">
+                    <p class="mb-0 me-2">You are here:</p>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Privacy Policy</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <h1 class=" alert alert-primary mt-5"> Privacy Policy </h1>
+            <div class="col-lg-8">
+                <p class="fw-bold">Last Updated: 2024/12/05</p>
+                <p>At <b>Dynamic Public Library</b>, we respect your privacy and are committed to protecting your personal data. This policy explains how we collect, use, and protect your information when you interact with our services.</p>
+
+                <hr class="my-4">
+
+                <!-- Section 1 -->
+                <h4 class="fw-bold">1. Information We Collect</h4>
+                <p>We collect information to provide better services to our users. This includes:</p>
+                <ul>
+                    <li><b>Personal Information:</b> Name, email address, phone number, and address when you sign up or register as a member.</li>
+                    <li><b>Usage Data:</b> Details about your interactions with our website, such as pages visited and resources accessed.</li>
+                    <li><b>Payment Information:</b> For membership fees or donations (processed securely through third-party payment providers).</li>
+                </ul>
+
+                <hr class="my-4">
+
+                <!-- Section 2 -->
+                <h4 class="fw-bold">2. How We Use Your Information</h4>
+                <p>Your information helps us:</p>
+                <ul>
+                    <li>Provide access to library services and online features.</li>
+                    <li>Send updates, notifications, or promotional offers related to the library.</li>
+                    <li>Enhance and personalize your experience with our website and services.</li>
+                    <li>Maintain our records and comply with legal obligations.</li>
+                </ul>
+
+                <hr class="my-4">
+
+                <!-- Section 3 -->
+                <h4 class="fw-bold">3. Sharing Your Information</h4>
+                <p>We do not sell or rent your personal information. However, we may share your data with:</p>
+                <ul>
+                    <li><b>Service Providers:</b> Trusted third parties who assist in operations like payment processing and email notifications.</li>
+                    <li><b>Legal Authorities:</b> When required by law or to protect our rights and safety.</li>
+                </ul>
+
+                <hr class="my-4">
+
+                <!-- Section 4 -->
+                <h4 class="fw-bold">4. Data Security</h4>
+                <p>We implement appropriate technical and organizational measures to protect your personal data against unauthorized access, loss, or misuse. However, no system is completely secure, and we cannot guarantee absolute security.</p>
+
+                <hr class="my-4">
+
+                <!-- Section 5 -->
+                <h4 class="fw-bold">5. Your Rights</h4>
+                <p>You have the right to:</p>
+                <ul>
+                    <li>Access, correct, or delete your personal information.</li>
+                    <li>Withdraw consent for data processing (where applicable).</li>
+                    <li>Contact us for any concerns about your data or privacy.</li>
+                </ul>
+
+                <hr class="my-4">
+
+                <!-- Section 6 -->
+                <h4 class="fw-bold">6. Cookies</h4>
+                <p>We use cookies to enhance your browsing experience. You can control cookie preferences through your browser settings. For details, refer to our <a href="#" class="text-primary">Cookie Policy</a>.</p>
+
+                <hr class="my-4">
+
+                <!-- Section 7 -->
+                <h4 class="fw-bold">7. Changes to This Policy</h4>
+                <p>We may update this privacy policy from time to time. Significant changes will be communicated on our website or through email notifications.</p>
+
+                <hr class="my-4">
+
+                <!-- CTA -->
+                <div class="alert alert-primary mt-5" role="alert">
+                    Have questions about your data? <a href="#" class="fw-bold text-decoration-none">Contact us</a> for more information.
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

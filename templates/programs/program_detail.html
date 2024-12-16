@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid bg-light py-3 mb-4">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-12 d-flex justify-content-start align-items-center">
+                <p class="mb-0 me-2">You are here:</p>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'program_list' %}">Program List</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">{{ program.title }}</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Program Detail -->
+<section class="program-detail">
+    <div class="container">
+        <div class="row">
+            <!-- Program Main Image and Description (Left and Right layout) -->
+            <div class="col-lg-6">
+                <!-- Main Program Image -->
+                <img src="{{ program.image.url }}" alt="{{ program.name }}" class="img-fluid mb-4 program-image">
+            </div>
+
+            <div class="col-lg-6">
+                <!-- Program Details -->
+                <h1 class="display-4 program-title">{{ program.title }}</h1>
+                <p class="lead program-description">{{ program.description }}</p>
+                <p><strong>Program Date:</strong> {{ program.program_date }}</p>
+                <p><strong>Coordinator:</strong> {{ program.coordinator_name }}</p>
+
+                <!-- Post Date (Updated Date) -->
+                {% if program.updated_at %}
+                    <p><strong>Last Updated:</strong> {{ program.updated_at }}</p>
+                {% else %}
+                    <p><strong>Post Date:</strong> {{ program.program_date }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Additional Program Images -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <h3 class="related-programs-title">Program Gallary</h3>
+                <div class="row">
+                    {% for program_image in program.sub_images.all %}
+                        <div class="col-md-4">
+                            <div class="card related-program-card">
+                                <img src="{{ program_image.image.url }}" alt="{{ program_image.caption }}" class="card-img-top">
+                                <div class="card-body">
+                                    {% if program_image.caption %}
+                                        <p class="card-text">{{ program_image.caption }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p>No Gallery available.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Related Programs -->
+        <div class="row mt-5">
+    <div class="col-12">
+        <h3 class="related-programs-title">Related Programs</h3>
+        <div class="row">
+            {% for related_program in related_programs %}
+                <div class="col-md-4">
+                    <div class="card related-program-card">
+                        <a href="{% url 'program_detail' related_program.id %}">
+                            <img src="{{ related_program.image.url }}" alt="{{ related_program.name }}" class="card-img-top">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ related_program.title }}</h5>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+    </div>
+</section>
+
+<style>
+    /* Styling for program title and description */
+    .program-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #343a40;
+    }
+
+    .program-image {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .program-description {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: #555;
+    }
+
+    /* Styling for additional program images */
+    .related-programs-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+    }
+
+    .related-program-card {
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+
+    .related-program-card:hover {
+        transform: scale(1.05);
+    }
+
+    .related-program-card .card-img-top {
+        height: 200px;
+        object-fit: cover;
+    }
+
+    .related-program-card .card-title {
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: #333;
+    }
+
+</style>
+{% endblock %}

@@ -1,0 +1,116 @@
+<!-- Features Section -->
+{% load static %}
+<div class="container-xxl py-5">
+    <div class="container">
+        <div class="row g-5 align-items-center">
+            <!-- Left Image Section -->
+            <div class="col-lg-6 wow fadeInUp" data-wow-delay="0.1s">
+                <div class="position-relative me-lg-4">
+                    <img class="img-fluid w-100" src="{% static 'img/books.jpg' %}" alt="Dynamic Public Library">
+                    <span
+                        class="position-absolute top-50 start-100 translate-middle bg-white rounded-circle d-none d-lg-block"
+                        style="width: 120px; height: 120px;"></span>
+                    <button type="button" class="btn-play" data-bs-toggle="modal"
+                        data-src="https://www.youtube.com/embed/ly5FhwmM4jo" data-bs-target="#videoModal">
+                        <span></span>
+                    </button>
+                </div>
+            </div>
+            <!-- Right Content Section -->
+            <div class="col-lg-6 wow fadeInUp" data-wow-delay="0.5s">
+                <p class="fw-medium text-uppercase text-primary mb-2">Why Choose Dynamic Public Library?</p>
+                <h1 class="display-5 mb-4">Empowering Communities Through Knowledge</h1>
+                <p class="mb-4">
+                    Dynamic Public Library is dedicated to fostering learning, promoting reading culture, and bridging the digital divide for all. Here's why we are trusted by thousands:
+                </p>
+                <div class="row gy-4">
+                    <!-- Feature 1 -->
+                    <div class="col-12">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0 btn-lg-square rounded-circle bg-primary">
+                                <i class="fa fa-book text-white"></i>
+                            </div>
+                            <div class="ms-4">
+                                <h4>Vast Collection of Resources</h4>
+                                <span>Access thousands of books, journals, and digital resources that cater to diverse interests and age groups.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Feature 2 -->
+                    <div class="col-12">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0 btn-lg-square rounded-circle bg-primary">
+                                <i class="fa fa-laptop text-white"></i>
+                            </div>
+                            <div class="ms-4">
+                                <h4>Digital Literacy Programs</h4>
+                                <span>We equip our members with essential digital skills to thrive in the modern world.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Feature 3 -->
+                    <div class="col-12">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0 btn-lg-square rounded-circle bg-primary">
+                                <i class="fa fa-users text-white"></i>
+                            </div>
+                            <div class="ms-4">
+                                <h4>Community-Centric Initiatives</h4>
+                                <span>Join workshops, seminars, and cultural events that bring communities together.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Feature 4 -->
+                    <div class="col-12">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0 btn-lg-square rounded-circle bg-primary">
+                                <i class="fa fa-clock text-white"></i>
+                            </div>
+                            <div class="ms-4">
+                                <h4>Extended Operating Hours</h4>
+                                <span>Open from 6:00 AM to 8:00 PM every day, so you can visit at your convenience.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Features End -->
+
+<!-- Video Modal Start -->
+<div class="modal modal-video fade" id="videoModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content rounded-0">
+            <div class="modal-header">
+                <h3 class="modal-title" id="exampleModalLabel">Dynamic Public Library in Action</h3>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 16:9 aspect ratio -->
+                <div class="ratio ratio-16x9">
+                    <iframe class="embed-responsive-item" src="" id="video" allowfullscreen allowscriptaccess="always"
+                        allow="autoplay"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Video Modal End -->
+
+<!-- Script to Handle Video Modal -->
+<script>
+    const videoModal = document.getElementById('videoModal');
+    const videoIframe = document.getElementById('video');
+
+    videoModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget; // Button that triggered the modal
+        const videoUrl = button.getAttribute('data-src'); // Extract video URL from data-src
+        videoIframe.src = videoUrl; // Set the video URL to the iframe src
+    });
+
+    videoModal.addEventListener('hide.bs.modal', function () {
+        videoIframe.src = ''; // Remove the video URL when the modal is closed
+    });
+</script>

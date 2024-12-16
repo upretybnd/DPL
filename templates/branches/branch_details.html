@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="container-fluid bg-light py-3 mb-4">
+    <div class="container-fluid bg-light py-2 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-12 d-flex justify-content-start align-items-center">
+                    <p class="mb-0 me-2">You are here:</p>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Branches</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container-xxl py-5">
+        <div class="container-xxl py-5">
+    <div class="container">
+        <div class="text-center mx-auto mb-5" style="max-width: 600px;">
+            <p class="fw-medium text-uppercase text-primary mb-2">Our Chapters</p>
+            <h1 class="display-5">Dynamic Public Library Chapters</h1>
+        </div>
+        <p class="text-center text-secondary mb-4">
+            Discover the diverse chapters of the Dynamic Public Library, each dedicated to empowering communities with knowledge and learning opportunities. Explore now!
+        </p>
+        <!-- Horizontal Layout with Multiple Branches in One Row -->
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6">
+                <div class="box border border-primary text-center py-4" style="border-radius: 15px; transition: transform 0.3s ease-in-out;">
+                    <a href="{% url 'branch_detail' branch_id=1 %}" class="stretched-link text-decoration-none">
+                        <h5 class="fw-bold text-primary mb-0">DPL Biratnagar Teens</h5>
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="box border border-primary text-center py-4" style="border-radius: 15px; transition: transform 0.3s ease-in-out;">
+                    <a href="{% url 'branch_detail' branch_id=2 %}" class="stretched-link text-decoration-none">
+                        <h5 class="fw-bold text-primary mb-0">DPL Birtamode</h5>
+                    </a>
+                </div>
+            </div>
+            <!-- Add more branches in the same row as needed -->
+        </div>
+    </div>
+    </div>
+</div>
+<!-- Hover Animation -->
+<style>
+    .box {
+        background-color: #f8f9fa;
+        border-width: 2px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .box:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        border-color: #0d6efd; /* Highlight border on hover */
+    }
+    .stretched-link h5 {
+        transition: color 0.3s ease;
+    }
+    .stretched-link:hover h5 {
+        color: #0d6efd;
+    }
+</style>
+{% endblock %}
+
