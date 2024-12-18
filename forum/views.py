@@ -16,7 +16,8 @@ from .forms import UserProfileForm
 
 # View for listing all categories
 def category_list(request):
-    categories = Category.objects.all()  # Fetch all categories
+    categories = Category.objects.all().order_by('id')  # Orders by the creation order
+
     for category in categories:
         # Fetch the latest 5 threads for each category
         category.latest_threads = category.threads.all().order_by('-created_at')[:5]

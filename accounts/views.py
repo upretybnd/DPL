@@ -30,7 +30,7 @@ def generate_verification_token(user_email):
 
 def send_verification_email(user_email):
     uid, token = generate_verification_token(user_email)
-    verification_link = f"http://127.0.0.1:8002/accounts/verify-email/{uid}/{token}/"  # Make sure this URL matches your URL pattern
+    verification_link = f"http://dpl.org.np/accounts/verify-email/{uid}/{token}/"  # Make sure this URL matches your URL pattern
     send_mail(
         subject="Verify Your Email - Dynamic Public Library",
         message=f"Hello, \n\nPlease verify your email by clicking on the link below:\n{verification_link}\n\nThank you!",

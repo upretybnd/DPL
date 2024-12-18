@@ -1,6 +1,6 @@
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes, force_text
+from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
@@ -23,7 +23,7 @@ def verify_token(token):
     """
     try:
         # Decode the user ID from base64
-        uid = force_text(urlsafe_base64_decode(token))
+        uid = force_str(urlsafe_base64_decode(token))
         user = User.objects.get(pk=uid)
 
         # Validate the token
