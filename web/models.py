@@ -8,7 +8,7 @@ def get_default_role():
 class Carousel(models.Model):
     title = models.CharField(max_length=200)
     program_organized_by = models.CharField(max_length=200)
-    image = models.ImageField(upload_to='carousel_images/')
+    image = models.ImageField(upload_to='banner_img/',blank=False, null=False)
 
     def __str__(self):
         return self.title
