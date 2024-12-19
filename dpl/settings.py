@@ -92,8 +92,12 @@ WSGI_APPLICATION = 'dpl.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(default=os.getenv('DATABASE_URL'))
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -139,12 +143,12 @@ STATIC_URL = '/static/'
 STATIC_ROOT = '=dynamic_public_library/static/'  # Ensure this points to the correct location
 
 
+
 # Media files (uploads)
 MEDIA_URL = '/media/'
 
 # Absolute filesystem path to the directory where media files will be stored
-MEDIA_ROOT = 'dynamic_public_library/media/'
-
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # This points to the 'media' folder in the project root
 
 
 # Default primary key field type
