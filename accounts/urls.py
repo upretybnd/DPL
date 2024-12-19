@@ -8,6 +8,6 @@ urlpatterns = [
     path('verify-email/<uidb64>/<token>/', views.verify_email, name='verify_email'),
     path('logout/', views.logout, name='logout'),
     path('reset-password/<uidb64>/<token>/', views.reset_password, name='reset_password'),
-
+    path('register-candidacy/', views.register_candidacy, name='register_candidacy'),
 
 ]

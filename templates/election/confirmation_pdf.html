@@ -1,0 +1,76 @@
+<!-- templates/election/confirmation_pdf.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nomination Confirmation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+
+        .header {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .info {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .info b {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Nomination Confirmation</h1>
+        <p>Dynamic Public Library - Election Committee</p>
+    </div>
+
+    <div class="section-title">
+        Candidate Information
+    </div>
+    <div class="info">
+        <b>Full Name:</b> {{ candidate.full_name }}<br>
+        <b>Email:</b> {{ candidate.email }}<br>
+        <b>Phone Number:</b> {{ candidate.phone_number }}<br>
+        <b>Address:</b> {{ candidate.address }}<br>
+        <b>Date of Birth:</b> {{ candidate.date_of_birth }}<br>
+    </div>
+
+    <div class="section-title">
+        Election Information
+    </div>
+    <div class="info">
+        <b>Position:</b> {{ candidate.position }}<br>
+        <b>Past Position:</b> {{ candidate.past_position }}<br>
+        <b>Profile Picture:</b> <img src="{{ candidate.profile_picture.url }}" alt="Profile Picture" width="100"><br>
+        <b>Citizenship Document:</b> <img src="{{ candidate.citizenship_document.url }}" alt="Citizenship Document" width="100"><br>
+        <b>Payment Screenshot:</b> <img src="{{ candidate.payment_screenshot.url }}" alt="Payment Screenshot" width="100"><br>
+    </div>
+
+    <div class="section-title">
+        Confirmation
+    </div>
+    <div class="info">
+        Your nomination for the position of <b>{{ candidate.position }}</b> has been successfully received.
+    </div>
+
+    <div class="footer" style="text-align: center; margin-top: 40px;">
+        <p>Best of luck with your candidacy!</p>
+    </div>
+</body>
+</html>

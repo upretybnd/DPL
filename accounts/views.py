@@ -1,16 +1,21 @@
 from django.core.exceptions import ValidationError
-
 from forum.models import UserProfile
 from .utils import generate_verification_token
-from django.http import HttpResponse
 from django.contrib.auth import authenticate, login, get_user_model
 from django.contrib.auth import logout as auth_logout
-from django.core.mail import send_mail
 from django.contrib.auth.models import User
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
-from django.shortcuts import render, redirect
+from django.core.mail import send_mail, EmailMessage
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+import tempfile
 from django.contrib import messages
+from django.shortcuts import render, redirect
+from .forms import CandidacyForm
+
+
 
 def forget_password(request):
     return render(request, 'account/forget_password.html')
@@ -181,4 +186,93 @@ def reset_password(request, uidb64, token):
             return redirect('forgot_password')  # Redirect to forgot password page if the token is invalid
     except (TypeError, ValueError, OverflowError, User.DoesNotExist):
         messages.error(request, 'Invalid password reset link.')
-        return redirect('forgot_password')  # Redirect to forgot password if something goes wrong
+        return redirect('forgot_password')  # Redirect to forgot password if something goes
+
+
+
+
+
+
+def register_candidacy(request):
+    if request.method == 'POST':
+        form = CandidacyForm(request.POST, request.FILES)
+        if form.is_valid():
+            candidate = form.save()
+
+            # Generate PDF from form data using ReportLab
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
+                c = canvas.Canvas(tmp_file.name, pagesize=letter)
+                # Drawing candidate data
+                c.setFont("Helvetica", 12)
+
+                # Candidate details (example)
+                c.drawString(100, 750, f"Nominee: {candidate.full_name}")
+                c.drawString(100, 730, f"Position: {candidate.position}")
+                c.drawString(100, 710, f"Email: {candidate.email}")
+                c.drawString(100, 690, f"Phone Number: {candidate.phone_number}")
+                c.drawString(100, 670, f"Address: {candidate.address}")
+                c.drawString(100, 650, f"Date of Birth: {candidate.date_of_birth}")
+                c.drawString(100, 630, f"Past Position: {candidate.past_position}")
+
+                # Handling images
+                if candidate.profile_picture:
+                    profile_picture_path = candidate.profile_picture.path
+                    c.drawImage(profile_picture_path, 100, 550, width=100, height=100)
+
+                if candidate.citizenship_document:
+                    citizenship_doc_path = candidate.citizenship_document.path
+                    c.drawImage(citizenship_doc_path, 100, 450, width=100, height=100)
+
+                if candidate.payment_screenshot:
+                    payment_screenshot_path = candidate.payment_screenshot.path
+                    c.drawImage(payment_screenshot_path, 100, 350, width=100, height=100)
+
+                # Save PDF file
+                c.save()
+
+                # Send confirmation email to candidate
+                try:
+                    send_mail(
+                        subject='Nomination Confirmation',
+                        message=f"""
+Dear {candidate.full_name},
+
+Congratulations! You have successfully registered your candidacy for the position of {candidate.position}.
+
+We wish you all the best.
+
+Regards,  
+Election Committee  
+Dynamic Public Library
+""",
+                        from_email='no-reply@dpl.org.np',
+                        recipient_list=[candidate.email],
+                        fail_silently=False,
+                    )
+
+                    # Send the PDF to the election committee
+                    committee_email = 'election@dpl.org.np'
+                    election_email = EmailMessage(
+                        subject=f'New Candidacy Registration: {candidate.full_name}',
+                        body=f'Please find the attached nomination document for {candidate.full_name}.',
+                        from_email='no-reply@dpl.org.np',
+                        to=[committee_email],
+                    )
+
+                    # Attach the PDF
+                    election_email.attach_file(tmp_file.name)
+
+                    # Send the email to the election committee
+                    election_email.send(fail_silently=False)
+
+                    # Provide success message
+                    messages.success(request, 'Your candidacy has been successfully submitted.')
+                    return render(request, 'templates/success_candidate_registration')  # Adjust this to your desired success page URL
+                except Exception as e:
+                    messages.warning(request, f"Your nomination was submitted, but an error occurred while sending the email: {e}")
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = CandidacyForm()
+
+    return render(request, 'election/register_candidacy.html', {'form': form})
