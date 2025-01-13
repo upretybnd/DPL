@@ -32,8 +32,8 @@ jobs:
 
       # Step 4: Trigger Git Pull on cPanel Server
       - name: Trigger Git Pull on cPanel
-        run: |
-          ssh ${{ secrets.CPANEL_SSH_USERNAME }}@$${{ secrets.CPANEL_SSH_HOST }} << 'EOF'
+        run: | 
+          ssh -p ${{ secrets.CPANEL_SSH_PORT }} ${{ secrets.CPANEL_SSH_USERNAME }}@${{ secrets.CPANEL_SSH_HOST }} << 'EOF'
           cd /home4/dplorgnp/public_html/dynamic_public_library/
           git pull origin main
           EOF
