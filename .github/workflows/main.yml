@@ -37,12 +37,12 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -p 22 ftp.dpl.org.np >> ~/.ssh/known_hosts
+          ssh-keyscan -p 1980 ftp.dpl.org.np >> ~/.ssh/known_hosts
 
       # Step 5: Deploy with Git
       - name: Git Pull on cPanel
         run: |
-          ssh -p 1980 your_dplorgnp@ftp.dpl.org.np << 'EOF'
+          ssh -p 1980 dplorgnp@ftp.dpl.org.np << 'EOF'
           cd /home4/dplorgnp/public_html/dynamic_public_library/
           git pull origin main
           EOF
