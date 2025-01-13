@@ -1,4 +1,4 @@
-name: Deploy to FTP
+name: Deploy to cPanel via Git
 
 on:
   push:
@@ -14,13 +14,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Set up Python
+      # Step 2: Set up Python (optional, only needed if you run Django commands in the workflow)
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      # Step 3: Install dependencies
+      # Step 3: Install dependencies (optional, only needed for local testing)
       - name: Install dependencies
         run: |
           python -m venv venv
@@ -30,12 +30,10 @@ jobs:
           python manage.py makemigrations --noinput
           python manage.py migrate --noinput
 
-      # Step 4: FTP deployment
-      - name: FTP Deploy
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: './'
-          server-dir: ${{ secrets.FTP_REMOTE_DIR }}
+      # Step 4: Trigger Git Pull on cPanel Server
+      - name: Trigger Git Pull on cPanel
+        run: |
+          ssh ${{ secrets.CPANEL_SSH_USERNAME }}@$${{ secrets.CPANEL_SSH_HOST }} << 'EOF'
+          cd /home4/dplorgnp/public_html/dynamic_public_library/
+          git pull origin main
+          EOF
