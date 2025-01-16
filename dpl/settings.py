@@ -12,16 +12,9 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
-import dj_database_url
 from dotenv import load_dotenv
 
-
-
-
-
 load_dotenv()
-
-
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -46,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'dpl',
     'web',
     'branches',
     'accounts',
@@ -91,13 +85,29 @@ WSGI_APPLICATION = 'dpl.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+# Get the environment to determine whether we're in development or production
+ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
 
+if ENVIRONMENT == 'production':
+    # Production database settings (PostgreSQL example)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME'),
+            'USER': os.getenv('DB_USER'),
+            'PASSWORD': os.getenv('DB_PASSWORD'),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+        }
+    }
+else:
+    # Development database settings (SQLite)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -136,19 +146,17 @@ LOGIN_REDIRECT_URL = 'home'
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 
-# Static files (CSS, JavaScript, images)
 STATIC_URL = '/static/'
 
-# Absolute filesystem path to the directory where static files will be collected
-STATIC_ROOT = '=dynamic_public_library/static/'  # Ensure this points to the correct location
+# Set STATIC_ROOT to a directory within public_html
+STATIC_ROOT = os.path.join(BASE_DIR,
+                           'staticfiles')  # This will be the directory where collected static files are stored
 
-
-
-# Media files (uploads)
+# Media files
 MEDIA_URL = '/media/'
 
-# Absolute filesystem path to the directory where media files will be stored
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # This points to the 'media' folder in the project root
+# Set MEDIA_ROOT to a directory within public_html
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # This will be the directory where uploaded media files are stored
 
 
 # Default primary key field type
