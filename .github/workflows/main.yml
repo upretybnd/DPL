@@ -36,7 +36,7 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa.1736782972
           ssh-keyscan -p 1980 ftp.dpl.org.np >> ~/.ssh/known_hosts
 
       # Step 5: Deploy with Git
