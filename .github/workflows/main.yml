@@ -30,7 +30,7 @@ jobs:
           python manage.py makemigrations --noinput
           python manage.py migrate --noinput
 
-      # Step 4: Set up SSH (ensure the key doesn't require a passphrase)
+      # Step 4: Set up SSH
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
@@ -44,4 +44,11 @@ jobs:
           ssh -i ~/.ssh/id_rsa.dpl_no_passphrase -p 1980 dplorgnp@ftp.dpl.org.np << 'EOF'
           cd /home4/dplorgnp/public_html/dynamic_public_library/
           git pull origin main
+          EOF
+
+      # Step 6: Restart the app by touching passenger_wsgi.py
+      - name: Restart Python app via Passenger (touch passenger_wsgi.py)
+        run: |
+          ssh -i ~/.ssh/id_rsa.dpl_no_passphrase -p 1980 dplorgnp@ftp.dpl.org.np << 'EOF'
+          touch /home4/dplorgnp/public_html/dpl/passenger_wsgi.py
           EOF
