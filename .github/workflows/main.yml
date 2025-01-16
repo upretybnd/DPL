@@ -30,21 +30,18 @@ jobs:
           python manage.py makemigrations --noinput
           python manage.py migrate --noinput
 
-      
-        #Step 4: Set up SSH
+      # Step 4: Set up SSH (ensure the key doesn't require a passphrase)
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa.1736782972
-          chmod 600 ~/.ssh/id_rsa.1736782972
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa.dpl_no_passphrase
+          chmod 600 ~/.ssh/id_rsa.dpl_no_passphrase
           ssh-keyscan -p 1980 ftp.dpl.org.np >> ~/.ssh/known_hosts
 
       # Step 5: Deploy with Git
       - name: Git Pull on cPanel
         run: |
-          ssh -p 1980 dplorgnp@ftp.dpl.org.np << 'EOF'
+          ssh -i ~/.ssh/id_rsa.dpl_no_passphrase -p 1980 dplorgnp@ftp.dpl.org.np << 'EOF'
           cd /home4/dplorgnp/public_html/dynamic_public_library/
           git pull origin main
           EOF
-
-      
