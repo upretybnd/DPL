@@ -20,3 +20,8 @@ db.sqlite3
 # Virtual environments
 venv/
 .env/
+
+staticfiles
+static
+media
+
