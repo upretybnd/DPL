@@ -5,6 +5,7 @@
 __pycache__/
 *.py[cod]
 
+dpl/settings.py
 # Django specific
 db.sqlite3
 /media
@@ -13,7 +14,8 @@ db.sqlite3
 # IDE files
 .vscode/
 .idea/
-
+staticfiles
+static
 # Log files
 *.log
 
