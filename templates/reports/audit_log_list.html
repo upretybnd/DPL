@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-xxl py-5 reports-shell">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <p class="text-uppercase text-primary mb-1">Governance</p>
+                <h2 class="mb-0">Audit Log</h2>
+            </div>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-success" href="{% url 'audit_log_export_csv' %}">Export CSV</a>
+                <a class="btn btn-outline-primary" href="{% url 'national_dashboard' %}">Back</a>
+            </div>
+        </div>
+
+        <form method="get" class="report-filter mb-3">
+            <div class="row g-2">
+                <div class="col-md-10"><input type="text" class="form-control" name="action" value="{{ action }}" placeholder="Filter by action"></div>
+                <div class="col-md-2"><button class="btn btn-primary w-100" type="submit">Filter</button></div>
+            </div>
+        </form>
+
+        <div class="report-table-wrap">
+            <table class="table report-table mb-0">
+                <thead>
+                    <tr><th>When</th><th>Actor</th><th>Action</th><th>Entity</th><th>Branch</th><th>Details</th></tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.created_at }}</td>
+                        <td>{% if log.actor %}{{ log.actor.username }}{% else %}System{% endif %}</td>
+                        <td>{{ log.action }}</td>
+                        <td>{{ log.entity_type }} #{{ log.entity_id }}</td>
+                        <td>{% if log.branch %}{{ log.branch.name }}{% else %}-{% endif %}</td>
+                        <td>{{ log.details }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6">No logs found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if logs.paginator.num_pages > 1 %}
+        <nav class="mt-4">
+            <ul class="pagination">
+                {% if logs.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ logs.previous_page_number }}&action={{ action }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">Page {{ logs.number }} of {{ logs.paginator.num_pages }}</span></li>
+                {% if logs.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ logs.next_page_number }}&action={{ action }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

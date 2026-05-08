@@ -1,9 +1,11 @@
 from django.contrib import admin
 
 from .models import (
+    AuditLog,
     BeneficiaryStat,
     BranchRole,
     EvidenceRequirement,
+    Notification,
     Project,
     ProjectEvidence,
     ProjectReport,
@@ -74,3 +76,17 @@ class ReportingPeriodAdmin(admin.ModelAdmin):
 class EvidenceRequirementAdmin(admin.ModelAdmin):
     list_display = ("project_type", "evidence_type", "is_required")
     list_filter = ("project_type", "evidence_type", "is_required")
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ("user", "title", "is_read", "created_at")
+    list_filter = ("is_read", "created_at")
+    search_fields = ("user__username", "title", "message")
+
+
+@admin.register(AuditLog)
+class AuditLogAdmin(admin.ModelAdmin):
+    list_display = ("action", "entity_type", "entity_id", "actor", "branch", "created_at")
+    list_filter = ("action", "entity_type", "branch", "created_at")
+    search_fields = ("details", "actor__username")

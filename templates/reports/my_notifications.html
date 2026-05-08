@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-xxl py-5 reports-shell">
+    <div class="container" style="max-width: 900px;">
+        <div class="mb-4">
+            <p class="text-uppercase text-primary mb-1">Alerts</p>
+            <h2 class="mb-0">My Notifications</h2>
+        </div>
+        <div class="report-form-card">
+            {% for item in notifications %}
+            <div class="border rounded p-3 mb-2">
+                <div class="d-flex justify-content-between">
+                    <strong>{{ item.title }}</strong>
+                    <small class="text-secondary">{{ item.created_at }}</small>
+                </div>
+                <p class="mb-1">{{ item.message }}</p>
+                {% if item.link %}<a href="{{ item.link }}">Open</a>{% endif %}
+            </div>
+            {% empty %}
+            <p class="mb-0">No notifications yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -13,10 +13,6 @@
                 {% if can_manage and project.status == 'draft' or can_manage and project.status == 'rejected' %}
                 <a class="btn btn-primary" href="{% url 'project_submit' project.id %}">Submit for Review</a>
                 {% endif %}
-                {% if can_review %}
-                <a class="btn btn-success" href="{% url 'project_review_action' project.id 'approve' %}">Approve</a>
-                <a class="btn btn-outline-danger" href="{% url 'project_review_action' project.id 'reject' %}">Reject</a>
-                {% endif %}
             </div>
         </div>
 
@@ -39,6 +35,7 @@
                     <h5>Review Comments</h5>
                     <form method="post" class="mb-3">
                         {% csrf_token %}
+                        <input type="hidden" name="form_type" value="comment">
                         {{ comment_form.comment }}
                         <div class="form-check mt-2">
                             {{ comment_form.is_internal }}
@@ -55,6 +52,35 @@
                         <p class="mb-0">No comments yet.</p>
                     {% endfor %}
                 </div>
+
+                {% if can_manage %}
+                <div class="report-form-card mb-3">
+                    <h5>Evidence Upload</h5>
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="form_type" value="evidence">
+                        <div class="row g-2">
+                            <div class="col-md-4">{{ evidence_form.evidence_type }}</div>
+                            <div class="col-md-8">{{ evidence_form.title }}</div>
+                            <div class="col-md-6">{{ evidence_form.file }}</div>
+                            <div class="col-md-6">{{ evidence_form.external_url }}</div>
+                        </div>
+                        <button class="btn btn-primary mt-2" type="submit">Add Evidence</button>
+                    </form>
+                    <hr>
+                    {% for evidence in evidences %}
+                        <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
+                            <div>
+                                <small class="text-secondary">{{ evidence.get_evidence_type_display }}</small>
+                                <div>{{ evidence.title }}</div>
+                            </div>
+                            <a class="btn btn-sm btn-outline-danger" href="{% url 'evidence_delete' evidence.id %}">Delete</a>
+                        </div>
+                    {% empty %}
+                        <p class="mb-0">No evidence uploaded yet.</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
 
             <div class="col-lg-4">
@@ -72,6 +98,26 @@
                         {% endfor %}
                     </ul>
                 </div>
+                {% if can_review %}
+                <div class="report-form-card mt-3">
+                    <h5>Review Actions</h5>
+                    <form method="post" action="{% url 'project_review_action' project.id 'review' %}" class="mb-2">
+                        {% csrf_token %}
+                        {{ review_form.note }}
+                        <button class="btn btn-outline-primary mt-2 w-100" type="submit">Mark Reviewed</button>
+                    </form>
+                    <form method="post" action="{% url 'project_review_action' project.id 'approve' %}" class="mb-2">
+                        {% csrf_token %}
+                        {{ review_form.note }}
+                        <button class="btn btn-success mt-2 w-100" type="submit">Approve</button>
+                    </form>
+                    <form method="post" action="{% url 'project_review_action' project.id 'reject' %}">
+                        {% csrf_token %}
+                        {{ review_form.note }}
+                        <button class="btn btn-outline-danger mt-2 w-100" type="submit">Reject</button>
+                    </form>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
