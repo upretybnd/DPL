@@ -8,11 +8,10 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail, EmailMessage
 from django.http import HttpResponse
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
 import tempfile
 from django.contrib import messages
 from django.shortcuts import render, redirect
+from django.db import IntegrityError
 from .forms import CandidacyForm
 
 
@@ -200,6 +199,16 @@ def register_candidacy(request):
             candidate = form.save()
 
             # Generate PDF from form data using ReportLab
+            try:
+                from reportlab.lib.pagesizes import letter
+                from reportlab.pdfgen import canvas
+            except ImportError:
+                messages.error(
+                    request,
+                    "Nomination was saved, but PDF generation is unavailable because ReportLab is not installed.",
+                )
+                return redirect("register_candidacy")
+
             with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
                 c = canvas.Canvas(tmp_file.name, pagesize=letter)
                 # Drawing candidate data
@@ -267,7 +276,7 @@ Dynamic Public Library
 
                     # Provide success message
                     messages.success(request, 'Your candidacy has been successfully submitted.')
-                    return render(request, 'templates/success_candidate_registration')  # Adjust this to your desired success page URL
+                    return render(request, 'election/success_candidate_registration.html')
                 except Exception as e:
                     messages.warning(request, f"Your nomination was submitted, but an error occurred while sending the email: {e}")
         else:

@@ -30,21 +30,19 @@
         </p>
         <!-- Horizontal Layout with Multiple Branches in One Row -->
         <div class="row g-4">
-            <div class="col-lg-4 col-md-6">
-                <div class="box border border-primary text-center py-4" style="border-radius: 15px; transition: transform 0.3s ease-in-out;">
-                    <a href="{% url 'branch_detail' branch_id=1 %}" class="stretched-link text-decoration-none">
-                        <h5 class="fw-bold text-primary mb-0">DPL Biratnagar Teens</h5>
-                    </a>
+            {% for branch in branches %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="box border border-primary text-center py-4" style="border-radius: 15px; transition: transform 0.3s ease-in-out;">
+                        <a href="{% url 'branch_detail' branch_id=branch.branch_id %}" class="stretched-link text-decoration-none">
+                            <h5 class="fw-bold text-primary mb-0">{{ branch.name }}</h5>
+                        </a>
+                    </div>
                 </div>
-            </div>
-            <div class="col-lg-4 col-md-6">
-                <div class="box border border-primary text-center py-4" style="border-radius: 15px; transition: transform 0.3s ease-in-out;">
-                    <a href="{% url 'branch_detail' branch_id=2 %}" class="stretched-link text-decoration-none">
-                        <h5 class="fw-bold text-primary mb-0">DPL Birtamode</h5>
-                    </a>
+            {% empty %}
+                <div class="col-12">
+                    <p class="text-center mb-0">No branches found.</p>
                 </div>
-            </div>
-            <!-- Add more branches in the same row as needed -->
+            {% endfor %}
         </div>
     </div>
     </div>
@@ -69,4 +67,3 @@
     }
 </style>
 {% endblock %}
-

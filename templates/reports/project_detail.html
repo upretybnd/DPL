@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-xxl py-5 reports-shell">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+            <div>
+                <p class="text-uppercase text-primary mb-1">{{ project.branch.name }}</p>
+                <h2 class="mb-1">{{ project.title }}</h2>
+                <span class="status-badge status-{{ project.status }}">{{ project.get_status_display }}</span>
+            </div>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-primary" href="{% url 'project_export_pdf' project.id %}">Export PDF</a>
+                {% if can_manage and project.status == 'draft' or can_manage and project.status == 'rejected' %}
+                <a class="btn btn-primary" href="{% url 'project_submit' project.id %}">Submit for Review</a>
+                {% endif %}
+                {% if can_review %}
+                <a class="btn btn-success" href="{% url 'project_review_action' project.id 'approve' %}">Approve</a>
+                <a class="btn btn-outline-danger" href="{% url 'project_review_action' project.id 'reject' %}">Reject</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="report-form-card mb-3">
+                    <h5>Impact Summary</h5>
+                    <p>{{ project.impact_summary }}</p>
+                    <div class="row g-3">
+                        <div class="col-md-4"><strong>Type:</strong> {{ project.project_type }}</div>
+                        <div class="col-md-4"><strong>Date:</strong> {{ project.event_date }}</div>
+                        <div class="col-md-4"><strong>Location:</strong> {{ project.location }}</div>
+                        <div class="col-md-4"><strong>Beneficiaries:</strong> {{ project.beneficiaries_count }}</div>
+                        <div class="col-md-4"><strong>Volunteer Hours:</strong> {{ project.volunteer_hours }}</div>
+                        <div class="col-md-4"><strong>Budget:</strong> {{ project.budget_actual }} / {{ project.budget_planned }}</div>
+                    </div>
+                </div>
+
+                <div class="report-form-card mb-3">
+                    <h5>Review Comments</h5>
+                    <form method="post" class="mb-3">
+                        {% csrf_token %}
+                        {{ comment_form.comment }}
+                        <div class="form-check mt-2">
+                            {{ comment_form.is_internal }}
+                            <label class="form-check-label" for="id_is_internal">Internal note</label>
+                        </div>
+                        <button class="btn btn-primary mt-2" type="submit">Add Comment</button>
+                    </form>
+                    {% for comment in comments %}
+                        <div class="border rounded p-2 mb-2">
+                            <small class="text-secondary">{{ comment.author }} | {{ comment.created_at }}</small>
+                            <p class="mb-0">{{ comment.comment }}</p>
+                        </div>
+                    {% empty %}
+                        <p class="mb-0">No comments yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="report-form-card">
+                    <h5>Status Timeline</h5>
+                    <ul class="list-unstyled mb-0">
+                        {% for item in history %}
+                            <li class="mb-2">
+                                <small class="text-secondary">{{ item.changed_at }}</small>
+                                <div>{{ item.get_from_status_display }} -> {{ item.get_to_status_display }}</div>
+                                <small>{{ item.changed_by }}{% if item.note %} | {{ item.note }}{% endif %}</small>
+                            </li>
+                        {% empty %}
+                            <li>No status changes yet.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

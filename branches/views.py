@@ -5,22 +5,8 @@ from django.shortcuts import render, get_object_or_404
 
 
 def branch_detail(request, branch_id):
-    # Retrieve the branch or raise 404 if not found
     branch = get_object_or_404(ParentBranch, branch_id=branch_id)
-
-    # Define a dictionary to map branch_ids to templates
-    branch_templates = {
-        1: 'branches/biratnagar_teens.html',
-        2: 'branches/birtamode.html',
-        5: 'branches/guardain_board.html',
-        6: 'branches/national_board.html',
-    }
-
-    # Use the branch_id to select the template, default to 'branch_details.html'
-    template = branch_templates.get(branch_id, 'branches/branch_details.html')
-
-    # Render the appropriate template
-    return render(request, template, {'branch': branch})
+    return render(request, 'branches/biratnagar_teens.html', {'branch': branch})
 
 
 def branch_details(request):

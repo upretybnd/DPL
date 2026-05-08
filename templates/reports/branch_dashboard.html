@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-xxl py-5 reports-shell">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+            <div>
+                <p class="text-uppercase text-primary mb-1">Branch Dashboard</p>
+                <h2 class="mb-0">Project Reporting Overview</h2>
+            </div>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-primary" href="{% if selected_branch %}{% url 'branch_monthly_export_pdf' selected_branch.branch_id %}?period={{ current_period }}{% else %}#{% endif %}">Export Monthly PDF</a>
+                <a class="btn btn-primary" href="{% url 'project_create' %}">Create Project Report</a>
+            </div>
+        </div>
+
+        <form class="report-filter mb-4" method="get">
+            <label class="form-label">Branch</label>
+            <select name="branch" class="form-select" onchange="this.form.submit()">
+                {% for branch in branches %}
+                    <option value="{{ branch.branch_id }}" {% if selected_branch and selected_branch.branch_id == branch.branch_id %}selected{% endif %}>{{ branch.name }}</option>
+                {% endfor %}
+            </select>
+        </form>
+
+        {% if selected_branch %}
+        <div class="row g-3 mb-4">
+            <div class="col-md-6 col-xl-3"><div class="report-card"><span>Total Projects</span><h3>{{ stats.total }}</h3></div></div>
+            <div class="col-md-6 col-xl-3"><div class="report-card"><span>Submitted</span><h3>{{ stats.submitted }}</h3></div></div>
+            <div class="col-md-6 col-xl-3"><div class="report-card"><span>Approved</span><h3>{{ stats.approved }}</h3></div></div>
+            <div class="col-md-6 col-xl-3"><div class="report-card"><span>Beneficiaries</span><h3>{{ stats.beneficiaries }}</h3></div></div>
+        </div>
+
+        <div class="report-table-wrap">
+            <table class="table report-table mb-0">
+                <thead>
+                    <tr><th>Title</th><th>Type</th><th>Date</th><th>Status</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    {% for project in projects %}
+                        <tr>
+                            <td>{{ project.title }}</td>
+                            <td>{{ project.project_type }}</td>
+                            <td>{{ project.event_date }}</td>
+                            <td><span class="status-badge status-{{ project.status }}">{{ project.get_status_display }}</span></td>
+                            <td><a href="{% url 'project_detail' project.id %}">Open</a></td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="5">No projects found for this branch.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <p>No branch assigned to your role yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-xxl py-5 reports-shell">
+    <div class="container" style="max-width: 980px;">
+        <div class="mb-4">
+            <p class="text-uppercase text-primary mb-1">Project Reporting</p>
+            <h2 class="mb-0">{% if mode == 'create' %}Create Project Report{% else %}Edit Project Report{% endif %}</h2>
+        </div>
+
+        <form method="post" class="report-form-card">
+            {% csrf_token %}
+            <div class="row g-3">
+                {% for field in form %}
+                    <div class="col-md-6 {% if field.name == 'impact_summary' %}col-12{% endif %}">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}<div class="text-danger small">{{ field.errors|striptags }}</div>{% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <hr class="my-4">
+            <h5>Report Details</h5>
+            <div class="row g-3">
+                {% for field in report_form %}
+                    <div class="col-md-6 {% if field.field.widget.input_type == 'textarea' %}col-12{% endif %}">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}<div class="text-danger small">{{ field.errors|striptags }}</div>{% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button class="btn btn-primary" type="submit">Save Draft</button>
+                <a class="btn btn-outline-secondary" href="{% url 'branch_dashboard' %}">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

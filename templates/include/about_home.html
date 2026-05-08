@@ -6,10 +6,10 @@
                 <div class="col-lg-6">
                     <div class="row gx-3 h-100">
                         <div class="col-6 align-self-start wow fadeInUp" data-wow-delay="0.1s">
-                            <img class="img-fluid" src="{% static 'img/10.jpg' %}">
+                            <img class="img-fluid" src="{% if media_items.about_left %}{{ media_items.about_left.image.url }}{% else %}{% static 'img/10.jpg' %}{% endif %}" alt="{% if media_items.about_left and media_items.about_left.alt_text %}{{ media_items.about_left.alt_text }}{% else %}About image left{% endif %}">
                         </div>
                         <div class="col-6 align-self-end wow fadeInDown" data-wow-delay="0.1s">
-                            <img class="img-fluid" src="{% static 'img/aaaa.jpg' %}">
+                            <img class="img-fluid" src="{% if media_items.about_right %}{{ media_items.about_right.image.url }}{% else %}{% static 'img/aaaa.jpg' %}{% endif %}" alt="{% if media_items.about_right and media_items.about_right.alt_text %}{{ media_items.about_right.alt_text }}{% else %}About image right{% endif %}">
                         </div>
                     </div>
                 </div>

@@ -13,3 +13,17 @@ class Carousel(models.Model):
     def __str__(self):
         return self.title
 
+
+class HomePageMedia(models.Model):
+    IMAGE_KEY_CHOICES = [
+        ("about_left", "About Left Image"),
+        ("about_right", "About Right Image"),
+        ("feature_main", "Feature Main Image"),
+    ]
+
+    key = models.CharField(max_length=50, choices=IMAGE_KEY_CHOICES, unique=True)
+    image = models.ImageField(upload_to="homepage/")
+    alt_text = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return self.get_key_display()

@@ -9,6 +9,7 @@ urlpatterns = [
     path('branch/', include('branches.urls')),
     path('accounts/', include('accounts.urls')),
     path('discussion/', include('forum.urls')),
+    path('reports/', include('reports.urls')),
 ]
 
 # Serve static files

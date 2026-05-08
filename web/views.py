@@ -1,10 +1,17 @@
 from django.shortcuts import render
-from web.models import Carousel
+from web.models import Carousel, HomePageMedia
+from branches.models import ParentBranch
 
 
 def home(request):
     carousel_items = Carousel.objects.all()
-    return render(request, 'home.html', {'carousel_items': carousel_items})
+    media_items = {item.key: item for item in HomePageMedia.objects.all()}
+    context = {
+        "carousel_items": carousel_items,
+        "media_items": media_items,
+        "branch_count": ParentBranch.objects.count(),
+    }
+    return render(request, "home.html", context)
 
 def about(request):
     return render(request, 'about.html')  # Rendering the about page template

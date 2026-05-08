@@ -699,3 +699,72 @@ h6,
     color: #B0B9AE;
     border-top: 1px solid rgba(255, 255, 255, .1);
 }
+/* Reporting UI */
+.reports-shell {
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 32%);
+}
+
+.report-card,
+.report-form-card,
+.report-filter,
+.report-table-wrap {
+    background: #ffffff;
+    border: 1px solid #e8edf3;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(2, 36, 91, 0.06);
+}
+
+.report-card {
+    padding: 1rem 1.2rem;
+}
+
+.report-card span {
+    color: #5f656f;
+    font-size: 0.9rem;
+}
+
+.report-card h3 {
+    margin-top: 0.35rem;
+    margin-bottom: 0;
+}
+
+.report-form-card {
+    padding: 1.25rem;
+}
+
+.report-filter {
+    padding: 1rem;
+}
+
+.report-table-wrap {
+    overflow-x: auto;
+}
+
+.report-table thead th {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #5f656f;
+    border-bottom-width: 1px;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.status-draft { background: #edf2f7; color: #2d3748; }
+.status-submitted { background: #e6f4ff; color: #0c4a6e; }
+.status-reviewed { background: #fff7e6; color: #8a4b08; }
+.status-approved { background: #eaf9ef; color: #0f5132; }
+.status-rejected { background: #fdeaea; color: #842029; }
+
+@media (max-width: 767.98px) {
+    .report-form-card,
+    .report-filter {
+        padding: 1rem;
+    }
+}

@@ -6,7 +6,7 @@
             <!-- Left Image Section -->
             <div class="col-lg-6 wow fadeInUp" data-wow-delay="0.1s">
                 <div class="position-relative me-lg-4">
-                    <img class="img-fluid w-100" src="{% static 'img/books.jpg' %}" alt="Dynamic Public Library">
+                    <img class="img-fluid w-100" src="{% if media_items.feature_main %}{{ media_items.feature_main.image.url }}{% else %}{% static 'img/books.jpg' %}{% endif %}" alt="{% if media_items.feature_main and media_items.feature_main.alt_text %}{{ media_items.feature_main.alt_text }}{% else %}Dynamic Public Library{% endif %}">
                     <span
                         class="position-absolute top-50 start-100 translate-middle bg-white rounded-circle d-none d-lg-block"
                         style="width: 120px; height: 120px;"></span>
