@@ -38,3 +38,4 @@ node_modules/
 
 # Local credentials (never commit)
 credentials.md
+.cloudflare.env

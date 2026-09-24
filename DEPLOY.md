@@ -32,7 +32,7 @@ sudo -u dpl /srv/dpl/app/deploy/backup.sh   # test a backup to R2
 
 ## 4. HTTPS (Cloudflare Origin Certificate)
 1. Cloudflare → **SSL/TLS → Origin Server → Create certificate** for `dpl.org.np, *.dpl.org.np`.
-2. On the VPS save them as `/etc/ssl/cloudflare/origin.pem` and `/etc/ssl/cloudflare/origin.key` (`chmod 600` the key).
+2. On the VPS save them as `/etc/ssl/cloudflare/dpl-origin.pem` and `/etc/ssl/cloudflare/dpl-origin.key` (`chmod 600` the key).
 3. `nginx -t && systemctl reload nginx`
 4. Cloudflare → SSL/TLS mode **Full (strict)**, enable **Always Use HTTPS**.
 
