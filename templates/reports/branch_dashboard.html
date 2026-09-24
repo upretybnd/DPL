@@ -1,58 +1,57 @@
 {% extends 'base.html' %}
+{% block seo %}{% include 'include/seo.html' with title="Branch reports" noindex=True %}{% endblock %}
+
 {% block content %}
-<div class="container-xxl py-5 reports-shell">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-            <div>
-                <p class="text-uppercase text-primary mb-1">Branch Dashboard</p>
-                <h2 class="mb-0">Project Reporting Overview</h2>
-            </div>
-            <div class="d-flex gap-2">
-                <a class="btn btn-outline-primary" href="{% if selected_branch %}{% url 'branch_monthly_export_pdf' selected_branch.branch_id %}?period={{ current_period }}{% else %}#{% endif %}">Export Monthly PDF</a>
-                <a class="btn btn-primary" href="{% url 'project_create' %}">Create Project Report</a>
-            </div>
-        </div>
+{% include 'reports/_dash_shell.html' with eyebrow="Branch dashboard" title="Project reporting" active="branch" %}
 
-        <form class="report-filter mb-4" method="get">
-            <label class="form-label">Branch</label>
-            <select name="branch" class="form-select" onchange="this.form.submit()">
-                {% for branch in branches %}
-                    <option value="{{ branch.branch_id }}" {% if selected_branch and selected_branch.branch_id == branch.branch_id %}selected{% endif %}>{{ branch.name }}</option>
-                {% endfor %}
-            </select>
-        </form>
-
-        {% if selected_branch %}
-        <div class="row g-3 mb-4">
-            <div class="col-md-6 col-xl-3"><div class="report-card"><span>Total Projects</span><h3>{{ stats.total }}</h3></div></div>
-            <div class="col-md-6 col-xl-3"><div class="report-card"><span>Submitted</span><h3>{{ stats.submitted }}</h3></div></div>
-            <div class="col-md-6 col-xl-3"><div class="report-card"><span>Approved</span><h3>{{ stats.approved }}</h3></div></div>
-            <div class="col-md-6 col-xl-3"><div class="report-card"><span>Beneficiaries</span><h3>{{ stats.beneficiaries }}</h3></div></div>
-        </div>
-
-        <div class="report-table-wrap">
-            <table class="table report-table mb-0">
-                <thead>
-                    <tr><th>Title</th><th>Type</th><th>Date</th><th>Status</th><th>Action</th></tr>
-                </thead>
-                <tbody>
-                    {% for project in projects %}
-                        <tr>
-                            <td>{{ project.title }}</td>
-                            <td>{{ project.project_type }}</td>
-                            <td>{{ project.event_date }}</td>
-                            <td><span class="status-badge status-{{ project.status }}">{{ project.get_status_display }}</span></td>
-                            <td><a href="{% url 'project_detail' project.id %}">Open</a></td>
-                        </tr>
-                    {% empty %}
-                        <tr><td colspan="5">No projects found for this branch.</td></tr>
+<section class="container-page py-10">
+    {% if selected_branch %}
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <form method="get" class="flex items-center gap-3">
+                <label for="branch-select" class="text-sm font-semibold">Branch</label>
+                <select id="branch-select" name="branch" class="input w-auto" onchange="this.form.submit()">
+                    {% for branch in branches %}
+                        <option value="{{ branch.branch_id }}" {% if selected_branch.branch_id == branch.branch_id %}selected{% endif %}>{{ branch.name }}</option>
                     {% endfor %}
+                </select>
+            </form>
+            <div class="flex flex-wrap gap-2">
+                {% if can_admin_selected %}<a class="btn btn-dark" href="{% url 'mis_branch_profile' selected_branch.branch_id %}"><i data-lucide="settings-2" class="size-4"></i> Manage branch page, team &amp; programs</a>{% endif %}
+                <a class="btn btn-outline" href="{% url 'branch_monthly_export_pdf' selected_branch.branch_id %}?period={{ current_period }}"><i data-lucide="file-down" class="size-4"></i> Monthly PDF ({{ current_period }})</a>
+            </div>
+        </div>
+
+        <dl class="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
+            {% include 'reports/_stat.html' with label="Total projects" value=stats.total icon="folder-kanban" %}
+            {% include 'reports/_stat.html' with label="Awaiting review" value=stats.submitted icon="hourglass" %}
+            {% include 'reports/_stat.html' with label="Approved" value=stats.approved icon="badge-check" %}
+            {% include 'reports/_stat.html' with label="People reached" value=stats.beneficiaries icon="users" %}
+            {% include 'reports/_stat.html' with label="Volunteer hours" value=stats.volunteer_hours icon="clock" %}
+        </dl>
+
+        <div class="mt-8 flex items-center justify-between">
+            <h2 class="display-md">Recent projects</h2>
+        </div>
+        <div class="table-wrap mt-4">
+            <table class="table">
+                <thead><tr><th>Project</th><th>Type</th><th>Date</th><th>Status</th><th class="sr-only">Open</th></tr></thead>
+                <tbody class="divide-y divide-line">
+                {% for project in projects %}
+                    <tr>
+                        <td class="font-semibold text-ink-900"><a href="{% url 'project_detail' project.id %}" class="hover:text-ember-600">{{ project.title }}</a></td>
+                        <td>{{ project.project_type }}</td>
+                        <td class="whitespace-nowrap">{{ project.event_date|date:"j M Y" }}</td>
+                        <td><span class="badge status-{{ project.status }}">{{ project.get_status_display }}</span></td>
+                        <td class="text-right"><a href="{% url 'project_detail' project.id %}" class="btn btn-ghost btn-sm">Open <i data-lucide="chevron-right" class="size-4"></i></a></td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5" class="py-10 text-center muted">No projects yet. <a href="{% url 'project_create' %}" class="font-semibold text-ember-600">Create the first report</a>.</td></tr>
+                {% endfor %}
                 </tbody>
             </table>
         </div>
-        {% else %}
-            <p>No branch assigned to your role yet.</p>
-        {% endif %}
-    </div>
-</div>
+    {% else %}
+        {% include 'include/empty_state.html' with icon="building-2" title="No branch assigned yet" text="Ask a national admin to give you a role on your branch." %}
+    {% endif %}
+</section>
 {% endblock %}

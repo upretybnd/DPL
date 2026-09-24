@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block seo %}{% include 'include/seo.html' with title="New branch · DPL MIS" noindex=True %}{% endblock %}
+
+{% block content %}
+{% include 'reports/_dash_shell.html' with eyebrow="Branch management" title="New branch" active="manage" %}
+
+<section class="container-page max-w-4xl py-10">
+    <a href="{% url 'mis_branches' %}" class="text-sm font-semibold text-ember-600"><i data-lucide="arrow-left" class="inline size-4"></i> All branches</a>
+    <form method="post" enctype="multipart/form-data" class="card card-body mt-4" novalidate>
+        {% csrf_token %}
+        <h2 class="display-md">Branch details</h2>
+        <p class="mt-1 text-sm muted">After saving, you'll be taken to Members &amp; access to appoint the Branch Admin.</p>
+        <div class="mt-6 grid gap-5 sm:grid-cols-2">
+            {% include 'include/field.html' with field=form.name span="sm:col-span-2" %}
+            {% include 'include/field.html' with field=form.branch_type label="Type" %}
+            {% include 'include/field.html' with field=form.parent label="Parent chapter (teens wings only)" %}
+            {% include 'include/field.html' with field=form.tagline span="sm:col-span-2" %}
+            {% include 'include/field.html' with field=form.description span="sm:col-span-2" %}
+            {% include 'include/field.html' with field=form.main_image label="Cover photo" %}
+            {% include 'include/field.html' with field=form.established_date %}
+            {% include 'include/field.html' with field=form.district %}
+            {% include 'include/field.html' with field=form.province %}
+            {% include 'include/field.html' with field=form.address span="sm:col-span-2" %}
+            {% include 'include/field.html' with field=form.phone %}
+            {% include 'include/field.html' with field=form.email %}
+            {% include 'include/field.html' with field=form.opening_hours %}
+            {% include 'include/field.html' with field=form.map_url label="Google Maps link" %}
+            {% include 'include/field.html' with field=form.facebook_url %}
+            {% include 'include/field.html' with field=form.instagram_url %}
+            {% include 'include/field.html' with field=form.display_order %}
+            <div class="space-y-3">
+                {% include 'include/field.html' with field=form.is_active label="Visible on the website" %}
+                {% include 'include/field.html' with field=form.in_about_menu label="Show in About menu" %}
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg mt-8"><i data-lucide="plus" class="size-4"></i> Create branch</button>
+    </form>
+</section>
+{% endblock %}

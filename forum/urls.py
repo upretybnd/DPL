@@ -11,8 +11,6 @@ urlpatterns = [
         path('edit_reply/<int:reply_id>/', views.edit_reply, name='edit_reply'),
         path('like_thread/<int:thread_id>/', views.like_thread, name='like_thread'),
         path('like_reply/<int:reply_id>/', views.like_reply, name='like_reply'),
-        path('thread/edit/<int:thread_id>/', views.edit_thread, name='edit_thread'),
-        path('reply/edit/<int:reply_id>/', views.edit_reply, name='edit_reply'),
         path('create/', views.create_thread, name='create_thread'),
         path('profile/<str:username>/', views.profile_view, name='profile'),  # Profile page URL
 

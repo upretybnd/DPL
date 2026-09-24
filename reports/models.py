@@ -3,6 +3,7 @@ from django.db import models
 from django.utils import timezone
 
 from branches.models import ParentBranch
+from dpl.storage import private_storage
 
 
 class BranchRole(models.Model):
@@ -77,6 +78,10 @@ class Project(models.Model):
     def __str__(self):
         return self.title
 
+    @property
+    def sdg_list(self):
+        return [tag.strip() for tag in self.sdg_tags.split(",") if tag.strip()]
+
 
 class ReportingPeriod(models.Model):
     year = models.PositiveIntegerField()
@@ -127,7 +132,7 @@ class ProjectEvidence(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="evidences")
     evidence_type = models.CharField(max_length=20, choices=EVIDENCE_CHOICES)
     title = models.CharField(max_length=255)
-    file = models.FileField(upload_to="project_evidence/", null=True, blank=True)
+    file = models.FileField(upload_to="project_evidence/", storage=private_storage, null=True, blank=True)
     external_url = models.URLField(blank=True)
     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)

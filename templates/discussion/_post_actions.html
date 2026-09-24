@@ -1,0 +1,10 @@
+<div class="mt-5 flex items-center gap-1 border-t border-line pt-3 text-sm">
+    <button type="button" @click="like" class="btn btn-ghost btn-sm" :class="liked && '!text-ember-600'" :aria-pressed="liked">
+        <i data-lucide="heart" class="size-4" :class="liked && 'fill-current'"></i>
+        <span x-text="likes"></span>
+    </button>
+    <a href="#reply-box" class="btn btn-ghost btn-sm"><i data-lucide="reply" class="size-4"></i> Reply</a>
+    {% if owner == request.user %}
+        <button type="button" @click="editing = !editing" class="btn btn-ghost btn-sm"><i data-lucide="pencil" class="size-4"></i> Edit</button>
+    {% endif %}
+</div>

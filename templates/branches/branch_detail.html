@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block seo %}{% if branch.main_image %}{% include 'include/seo.html' with title=branch.name description=branch.tagline|default:branch.description image=branch.main_image.url %}{% else %}{% include 'include/seo.html' with title=branch.name description=branch.tagline|default:branch.description %}{% endif %}{% endblock %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Library",
+  "name": "{{ branch.name|escapejs }}",
+  "description": "{{ branch.description|truncatechars:300|escapejs }}",
+  "url": "{{ request.scheme }}://{{ request.get_host }}{{ branch.get_absolute_url }}",
+  {% if branch.phone %}"telephone": "{{ branch.phone|escapejs }}",{% endif %}
+  {% if branch.email %}"email": "{{ branch.email|escapejs }}",{% endif %}
+  {% if branch.opening_hours %}"openingHours": "{{ branch.opening_hours|escapejs }}",{% endif %}
+  "address": {"@type": "PostalAddress", "streetAddress": "{{ branch.address|escapejs }}", "addressLocality": "{{ branch.district|escapejs }}", "addressCountry": "NP"},
+  "parentOrganization": {"@type": "NGO", "name": "Dynamic Public Library"}
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="relative isolate overflow-hidden bg-ink-950 text-white">
+    <img src="{% if branch.main_image %}{{ branch.main_image.url }}{% else %}{{ default_cover_url }}{% endif %}" alt="" class="absolute inset-0 -z-10 size-full object-cover opacity-35">
+    <div class="absolute inset-0 -z-10 bg-gradient-to-t from-ink-950 via-ink-950/70 to-ink-950/30"></div>
+    <div class="container-page pb-14 pt-10 sm:pb-20">
+        <nav aria-label="Breadcrumb" class="text-sm text-white/60">
+            <ol class="flex flex-wrap items-center gap-1.5">
+                <li><a href="{% url 'home' %}" class="hover:text-white">Home</a></li>
+                <li aria-hidden="true">/</li>
+                {% if branch.is_organisation %}<li><a href="{% url 'about' %}" class="hover:text-white">About</a></li>{% else %}<li><a href="{% url 'branch_details' %}" class="hover:text-white">Chapters</a></li>{% endif %}
+                {% if branch.parent %}<li aria-hidden="true">/</li><li><a href="{{ branch.parent.get_absolute_url }}" class="hover:text-white">{{ branch.parent.name }}</a></li>{% endif %}
+                <li aria-hidden="true">/</li>
+                <li class="text-white" aria-current="page">{{ branch.name }}</li>
+            </ol>
+        </nav>
+        <div class="reveal mt-16 max-w-3xl sm:mt-24">
+            <span class="badge bg-white/10 text-white ring-1 ring-white/20">{{ branch.get_branch_type_display }}</span>
+            <h1 class="display-xl mt-4 !text-white">{{ branch.name }}</h1>
+            {% if branch.tagline %}<p class="mt-4 text-xl text-white/80">{{ branch.tagline }}</p>{% endif %}
+            <div class="mt-8 flex flex-wrap gap-3">
+                {% for wing in branch.wings.all %}
+                    <a href="{{ wing.get_absolute_url }}" class="btn btn-primary">Visit {{ wing.name }} <i data-lucide="arrow-right" class="size-4"></i></a>
+                {% endfor %}
+                {% if branch.parent %}
+                    <a href="{{ branch.parent.get_absolute_url }}" class="btn btn-primary"><i data-lucide="arrow-left" class="size-4"></i> {{ branch.parent.name }}</a>
+                {% endif %}
+                {% if branch.map_url %}<a href="{{ branch.map_url }}" target="_blank" rel="noopener" class="btn btn-light"><i data-lucide="map" class="size-4"></i> Directions</a>{% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Overview -->
+<section class="container-page section">
+    <div class="grid gap-12 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+            <p class="eyebrow">About {% if branch.is_organisation %}{{ branch.name }}{% else %}the {{ branch.get_branch_type_display|lower }}{% endif %}</p>
+            {% if branch.description %}
+                <div class="prose-dpl mt-5 whitespace-pre-line">{{ branch.description }}</div>
+            {% else %}
+                <p class="mt-5 muted">More about {{ branch.name }} is coming soon.</p>
+            {% endif %}
+
+            {% if program_count or projects %}
+            <dl class="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                {% if branch.established_date %}<div class="panel !p-5"><dt class="text-xs muted">Established</dt><dd class="stat !text-3xl">{{ branch.established_date|date:"Y" }}</dd></div>{% endif %}
+                <div class="panel !p-5"><dt class="text-xs muted">Programs</dt><dd class="stat !text-3xl">{{ program_count }}</dd></div>
+                <div class="panel !p-5"><dt class="text-xs muted">Published reports</dt><dd class="stat !text-3xl">{{ projects|length }}</dd></div>
+            </dl>
+            {% endif %}
+        </div>
+
+        <aside class="card card-body h-fit lg:sticky lg:top-24">
+            <h2 class="font-sans text-sm font-semibold uppercase tracking-wider text-ink-900/60">{% if branch.is_organisation %}Contact{% else %}Visit &amp; contact{% endif %}</h2>
+            {% if not branch.address and not branch.district and not branch.opening_hours and not branch.phone and not branch.email %}
+                <p class="mt-4 text-sm muted">Reach the DPL team at <a href="mailto:contact@dpl.org.np" class="font-semibold text-ember-600">contact@dpl.org.np</a>.</p>
+            {% endif %}
+            <ul class="mt-5 space-y-4 text-sm empty:hidden">
+                {% if branch.address or branch.district %}
+                <li class="flex gap-3"><i data-lucide="map-pin" class="mt-0.5 size-4 shrink-0 text-ember-500"></i>
+                    <span>{{ branch.address }}{% if branch.address and branch.district %}, {% endif %}{{ branch.district }}{% if branch.province %}<br><span class="muted">{{ branch.get_province_display }} Province</span>{% endif %}</span></li>
+                {% endif %}
+                {% if branch.opening_hours %}<li class="flex gap-3"><i data-lucide="clock" class="mt-0.5 size-4 shrink-0 text-ember-500"></i>{{ branch.opening_hours }}</li>{% endif %}
+                {% if branch.phone %}<li class="flex gap-3"><i data-lucide="phone" class="mt-0.5 size-4 shrink-0 text-ember-500"></i><a href="tel:{{ branch.phone }}" class="hover:text-ember-600">{{ branch.phone }}</a></li>{% endif %}
+                {% if branch.email %}<li class="flex gap-3"><i data-lucide="mail" class="mt-0.5 size-4 shrink-0 text-ember-500"></i><a href="mailto:{{ branch.email }}" class="break-all hover:text-ember-600">{{ branch.email }}</a></li>{% endif %}
+                {% if branch.established_date %}<li class="flex gap-3"><i data-lucide="calendar-heart" class="mt-0.5 size-4 shrink-0 text-ember-500"></i>Serving since {{ branch.established_date|date:"F Y" }}</li>{% endif %}
+            </ul>
+            {% if branch.facebook_url or branch.instagram_url %}
+            <div class="mt-6 flex gap-2 border-t border-line pt-5">
+                {% if branch.facebook_url %}<a href="{{ branch.facebook_url }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm"><i data-lucide="facebook" class="size-4"></i> Facebook</a>{% endif %}
+                {% if branch.instagram_url %}<a href="{{ branch.instagram_url }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm"><i data-lucide="instagram" class="size-4"></i> Instagram</a>{% endif %}
+            </div>
+            {% endif %}
+            <a href="{% url 'contact' %}" class="btn btn-dark mt-6 w-full">Volunteer here</a>
+        </aside>
+    </div>
+</section>
+
+<!-- Team -->
+{% if board_members or charter_presidents or past_presidents or advisors %}
+<section class="section bg-paper-2/60">
+    <div class="container-page">
+        {% if board_members %}
+            <div class="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                    <p class="eyebrow">Leadership</p>
+                    <h2 class="display-lg mt-4">{% if branch.is_organisation %}Our team{% elif branch.is_board %}Members of the {{ branch.name }}{% else %}{{ branch.name }} board{% endif %}</h2>
+                </div>
+                {% with term=board_members.0.term %}{% if term %}<span class="badge badge-ink">Term {{ term }}</span>{% endif %}{% endwith %}
+            </div>
+            <div class="mt-10 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+                {% for member in board_members %}{% include 'branches/_member_card.html' %}{% endfor %}
+            </div>
+        {% endif %}
+
+        {% if charter_presidents or past_presidents %}
+        <div class="mt-16 grid gap-10 lg:grid-cols-2">
+            {% if charter_presidents %}
+            <div>
+                <h3 class="display-md">Charter president{{ charter_presidents|length|pluralize }}</h3>
+                <div class="mt-6 grid grid-cols-2 gap-5">{% for member in charter_presidents %}{% include 'branches/_member_card.html' %}{% endfor %}</div>
+            </div>
+            {% endif %}
+            {% if past_presidents %}
+            <div>
+                <h3 class="display-md">Past presidents</h3>
+                <div class="mt-6 grid grid-cols-2 gap-5">{% for member in past_presidents %}{% include 'branches/_member_card.html' %}{% endfor %}</div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if advisors %}
+            <h3 class="display-md mt-16">Advisors</h3>
+            <div class="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">{% for member in advisors %}{% include 'branches/_member_card.html' %}{% endfor %}</div>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Programs -->
+{% if programs %}
+<section class="container-page section">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <p class="eyebrow">Programs</p>
+            <h2 class="display-lg mt-4">Recent programs</h2>
+        </div>
+        {% if program_count > programs|length %}
+            <a class="btn btn-outline" href="{% url 'program_list' %}?branch={{ branch.branch_id }}">All {{ program_count }} programs <i data-lucide="arrow-right" class="size-4"></i></a>
+        {% endif %}
+    </div>
+    <div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {% for program in programs %}{% include 'programs/_program_card.html' %}{% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Impact -->
+{% if projects %}
+<section class="container-page section {% if programs %}pt-0{% endif %}">
+    <p class="eyebrow">Impact</p>
+    <h2 class="display-lg mt-4">Published project reports</h2>
+    <div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {% for project in projects %}{% include 'reports/_public_project_card.html' %}{% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Gallery -->
+{% if gallery %}
+<section class="container-page section {% if programs or projects %}pt-0{% endif %}" x-data="{ open: null }">
+    <p class="eyebrow">Gallery</p>
+    <h2 class="display-lg mt-4">Moments from {{ branch.name }}</h2>
+    <div class="mt-10 columns-2 gap-4 sm:columns-3 lg:columns-4 [&>*]:mb-4">
+        {% for photo in gallery %}
+            <button type="button" class="block w-full overflow-hidden rounded-2xl" @click="open = '{{ photo.image.url|escapejs }}'">
+                <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:branch.name }}" loading="lazy" class="w-full transition duration-500 hover:scale-105">
+            </button>
+        {% endfor %}
+    </div>
+    <div x-show="open" x-cloak x-transition.opacity class="fixed inset-0 z-50 grid place-items-center bg-ink-950/90 p-4" @click="open = null" @keydown.escape.window="open = null">
+        <img :src="open" alt="" class="max-h-[88vh] max-w-full rounded-2xl">
+        <button type="button" class="btn btn-light absolute right-4 top-4 !px-2.5" aria-label="Close"><i data-lucide="x" class="size-5"></i></button>
+    </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,6 @@
+# DPL backups to Cloudflare R2 (installed to /etc/cron.d/dpl-backup)
+SHELL=/bin/bash
+# Database every night at 02:30 Nepal time (20:45 UTC)
+45 20 * * * dpl /srv/dpl/app/deploy/backup.sh >> /srv/dpl/logs/backup.log 2>&1
+# Uploads mirror every Sunday
+15 21 * * 0 dpl /srv/dpl/app/deploy/backup.sh media >> /srv/dpl/logs/backup.log 2>&1

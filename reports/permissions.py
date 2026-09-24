@@ -33,6 +33,13 @@ def user_is_national_admin(user):
     ).exists()
 
 
+def user_has_portal_access(user):
+    """Anyone with an active reporting role (or a superuser) can use the management portal."""
+    if not user.is_authenticated:
+        return False
+    return user.is_superuser or BranchRole.objects.filter(user=user, is_active=True).exists()
+
+
 def user_branch_ids(user):
     if user_is_national_admin(user):
         return list(ParentBranch.objects.values_list("branch_id", flat=True))
@@ -87,3 +94,32 @@ def role_required(min_role):
         return _wrapped
 
     return decorator
+
+
+def can_admin_branch(user, branch):
+    """Branch Admins (and national admins) run a branch's page, team, gallery, programs and members."""
+    if user_is_national_admin(user):
+        return True
+    return BranchRole.objects.filter(
+        user=user, branch=branch, role=BranchRole.ROLE_BRANCH_ADMIN, is_active=True
+    ).exists()
+
+
+def require_branch_admin(user, branch):
+    if not can_admin_branch(user, branch):
+        raise PermissionDenied("Only this branch's admins can do that.")
+
+
+def administered_branches(user):
+    if user_is_national_admin(user):
+        return ParentBranch.objects.all()
+    return ParentBranch.objects.filter(
+        user_roles__user=user, user_roles__role=BranchRole.ROLE_BRANCH_ADMIN, user_roles__is_active=True
+    ).distinct()
+
+
+def assignable_roles(user):
+    """National admins can grant any branch role; branch admins can add reporters and viewers."""
+    if user_is_national_admin(user):
+        return [(k, v) for k, v in BranchRole.ROLE_CHOICES if k != BranchRole.ROLE_NATIONAL_ADMIN]
+    return [(k, v) for k, v in BranchRole.ROLE_CHOICES if k in (BranchRole.ROLE_REPORTER, BranchRole.ROLE_VIEWER)]

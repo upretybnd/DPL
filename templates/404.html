@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block seo %}{% include 'include/seo.html' with title="Page not found" noindex=True %}{% endblock %}
+
+{% block content %}
+<section class="container-page max-w-2xl py-24 text-center">
+    <p class="font-display text-8xl font-semibold text-ember-500">404</p>
+    <h1 class="display-lg mt-4">This page is missing from the shelf</h1>
+    <p class="lead mt-4">The page you're looking for may have moved or no longer exists.</p>
+    <div class="mt-8 flex flex-wrap justify-center gap-3">
+        <a href="{% url 'home' %}" class="btn btn-dark">Back to home</a>
+        <a href="{% url 'branch_details' %}" class="btn btn-outline">Find a chapter</a>
+        <a href="{% url 'program_list' %}" class="btn btn-outline">Browse programs</a>
+    </div>
+</section>
+{% endblock %}

@@ -1,76 +1,73 @@
 {% extends 'base.html' %}
+{% block seo %}{% include 'include/seo.html' with title="National overview" noindex=True %}{% endblock %}
+
 {% block content %}
-<div class="container-xxl py-5 reports-shell">
-    <div class="container">
-        <div class="mb-4">
-            <p class="text-uppercase text-primary mb-1">National Dashboard</p>
-            <h2 class="mb-0">Cross-Branch Impact Report</h2>
-        </div>
-        <div class="d-flex gap-2 mb-4">
-            <a class="btn btn-outline-primary" href="{% url 'national_analytics' %}">Open Analytics</a>
-            <a class="btn btn-outline-secondary" href="{% url 'public_project_list' %}">Public Transparency Pages</a>
-            <a class="btn btn-outline-dark" href="{% url 'audit_log_list' %}">Audit Logs</a>
-        </div>
-        <div class="report-form-card mb-4">
-            <form method="get" action="{% url 'toggle_reporting_period_lock' %}" class="row g-2 align-items-end">
-                <div class="col-md-4">
-                    <label class="form-label mb-1">Reporting Period (YYYY-MM)</label>
-                    <input class="form-control" type="text" name="period" value="{{ current_period }}" />
-                </div>
-                <div class="col-md-3">
-                    <button class="btn btn-outline-danger w-100" type="submit">Toggle Lock</button>
-                </div>
-                <div class="col-md-3">
-                    <a class="btn btn-outline-warning w-100" href="{% url 'send_submission_reminders' %}?period={{ current_period }}">Send Reminders</a>
-                </div>
-            </form>
-            <div class="mt-3 small text-secondary">
-                Recent periods:
-                {% for period in periods %}
-                    <span class="me-2">{{ period.year }}-{{ period.month|stringformat:"02d" }}({% if period.is_locked %}Locked{% else %}Open{% endif %})</span>
-                {% empty %}
-                    <span>No period records yet.</span>
-                {% endfor %}
+{% include 'reports/_dash_shell.html' with eyebrow="National dashboard" title="Cross-branch impact" active="national" %}
+
+<section class="container-page py-10">
+    <div class="grid gap-6 lg:grid-cols-3">
+        <form method="post" action="{% url 'toggle_reporting_period_lock' %}" class="card card-body lg:col-span-2">
+            {% csrf_token %}
+            <h2 class="display-md">Reporting period</h2>
+            <p class="mt-1 text-sm muted">Lock a month to stop new submissions, or remind reporters about missing evidence.</p>
+            <div class="mt-5 flex flex-wrap items-end gap-3">
+                <label class="flex-1">
+                    <span class="label">Period</span>
+                    <input class="input" type="month" name="period" value="{{ current_period }}" required>
+                </label>
+                <button class="btn btn-dark" type="submit"><i data-lucide="lock" class="size-4"></i> Toggle lock</button>
+                <button class="btn btn-outline" type="submit" formaction="{% url 'send_submission_reminders' %}"><i data-lucide="bell-ring" class="size-4"></i> Send reminders</button>
             </div>
-        </div>
-
-        <div class="report-table-wrap mb-4">
-            <table class="table report-table mb-0">
-                <thead>
-                    <tr><th>Branch</th><th>Total Projects</th><th>Approved</th><th>Beneficiaries</th><th>Volunteer Hours</th></tr>
-                </thead>
-                <tbody>
-                    {% for row in branch_rows %}
-                        <tr>
-                            <td>{{ row.name }}</td>
-                            <td>{{ row.total_projects|default:0 }}</td>
-                            <td>{{ row.approved_projects|default:0 }}</td>
-                            <td>{{ row.total_beneficiaries|default:0 }}</td>
-                            <td>{{ row.total_hours|default:0 }}</td>
-                        </tr>
-                    {% empty %}
-                        <tr><td colspan="5">No branches available.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <h4 class="mb-3">Recent Project Submissions</h4>
-        <div class="row g-3">
-            {% for project in recent_projects %}
-                <div class="col-md-6 col-xl-4">
-                    <div class="report-card h-100">
-                        <small class="text-secondary">{{ project.branch.name }}</small>
-                        <h5 class="mt-2">{{ project.title }}</h5>
-                        <p class="mb-2">{{ project.project_type }} | {{ project.event_date }}</p>
-                        <span class="status-badge status-{{ project.status }}">{{ project.get_status_display }}</span>
-                        <div class="mt-3"><a href="{% url 'project_detail' project.id %}">View report</a></div>
-                    </div>
-                </div>
-            {% empty %}
-                <p>No projects created yet.</p>
-            {% endfor %}
+        </form>
+        <div class="card card-body">
+            <h2 class="font-sans text-sm font-semibold uppercase tracking-wider muted">Recent periods</h2>
+            <ul class="mt-4 flex flex-wrap gap-2">
+                {% for period in periods %}
+                    <li class="badge {% if period.is_locked %}status-rejected{% else %}status-approved{% endif %}">
+                        <i data-lucide="{% if period.is_locked %}lock{% else %}lock-open{% endif %}" class="size-3"></i>
+                        {{ period.year }}-{{ period.month|stringformat:"02d" }}
+                    </li>
+                {% empty %}
+                    <li class="text-sm muted">No periods recorded yet.</li>
+                {% endfor %}
+            </ul>
         </div>
     </div>
-</div>
+
+    <h2 class="display-md mt-12">Branches</h2>
+    <div class="table-wrap mt-4">
+        <table class="table">
+            <thead><tr><th>Branch</th><th class="text-right">Projects</th><th class="text-right">Approved</th><th class="text-right">People reached</th><th class="text-right">Volunteer hours</th></tr></thead>
+            <tbody class="divide-y divide-line">
+            {% for row in branch_rows %}
+                <tr>
+                    <td class="font-semibold text-ink-900"><a href="{% url 'branch_dashboard' %}?branch={{ row.branch_id }}" class="hover:text-ember-600">{{ row.name }}</a></td>
+                    <td class="text-right tabular-nums">{{ row.total_projects|default:0 }}</td>
+                    <td class="text-right tabular-nums">{{ row.approved_projects|default:0 }}</td>
+                    <td class="text-right tabular-nums">{{ row.total_beneficiaries|default:0 }}</td>
+                    <td class="text-right tabular-nums">{{ row.total_hours|default:0 }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5" class="py-10 text-center muted">No branches yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <h2 class="display-md mt-12">Recent submissions</h2>
+    <div class="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {% for project in recent_projects %}
+            <a href="{% url 'project_detail' project.id %}" class="card card-hover block p-5">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs muted">{{ project.branch.name }}</span>
+                    <span class="badge status-{{ project.status }}">{{ project.get_status_display }}</span>
+                </div>
+                <p class="mt-2 font-semibold text-ink-900">{{ project.title }}</p>
+                <p class="mt-1 text-sm muted">{{ project.project_type }} · {{ project.event_date|date:"j M Y" }}</p>
+            </a>
+        {% empty %}
+            {% include 'include/empty_state.html' with icon="folder-open" title="No projects yet" %}
+        {% endfor %}
+    </div>
+</section>
 {% endblock %}

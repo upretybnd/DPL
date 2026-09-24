@@ -1,0 +1,16 @@
+{% load static %}{% comment %}
+SEO head tags. Pages override with:
+{% block seo %}{% include 'include/seo.html' with title="…" description="…" image=obj.image.url type="article" %}{% endblock %}
+{% endcomment %}{% with site="Dynamic Public Library" %}
+<title>{% if title %}{{ title }} · {{ site }}{% else %}{{ site }} — Reading, learning and community across Nepal{% endif %}</title>
+<meta name="description" content="{{ description|default:'Dynamic Public Library (DPL) is a non-profit network of community libraries across Nepal, building reading culture through books, youth programs and learning events.'|striptags|truncatechars:160 }}">
+<link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+{% if noindex %}<meta name="robots" content="noindex">{% endif %}
+<meta property="og:site_name" content="{{ site }}">
+<meta property="og:type" content="{{ type|default:'website' }}">
+<meta property="og:title" content="{{ title|default:site }}">
+<meta property="og:description" content="{{ description|default:'Community libraries building reading culture across Nepal.'|striptags|truncatechars:200 }}">
+<meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+<meta property="og:image" content="{% if image %}{% if '://' not in image %}{{ request.scheme }}://{{ request.get_host }}{% endif %}{{ image }}{% else %}{% if '://' not in default_cover_url %}{{ request.scheme }}://{{ request.get_host }}{% endif %}{{ default_cover_url }}{% endif %}">
+<meta name="twitter:card" content="summary_large_image">
+{% endwith %}

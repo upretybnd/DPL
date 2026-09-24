@@ -1,79 +1,150 @@
 from django.contrib import admin
-from django.utils.html import format_html, mark_safe
-from .models import ParentBranch, BranchTeam, Program, ProgramImage
+from django.db.models import Q
+from django.utils.html import format_html
+
+from reports.models import BranchRole
+from reports.permissions import user_is_national_admin
+from .models import BranchGalleryImage, BranchTeam, ParentBranch, Program, ProgramImage
 
 
-class BranchTeamInline(admin.TabularInline):
-    model = BranchTeam  # Model to link (BranchTeam)
-    extra = 1  # Number of extra blank forms for inline editing
-    fields = ('member_name', 'designation', 'member_image')  # You can define fields explicitly if needed
+def admin_branch_ids(user):
+    """Branches a staff user may edit in the admin: all for national admins, otherwise the ones they run."""
+    if user_is_national_admin(user):
+        return None
+    return list(
+        ParentBranch.objects.filter(
+            Q(manager=user)
+            | Q(user_roles__user=user, user_roles__role=BranchRole.ROLE_BRANCH_ADMIN, user_roles__is_active=True)
+        ).values_list("branch_id", flat=True).distinct()
+    )
 
 
-class ParentBranchAdmin(admin.ModelAdmin):
-    list_display = ('branch_id', 'name', 'description', 'manager')  # Display key fields
-    search_fields = ('name',)  # Enable search by branch name
-    list_filter = ('name',)  # Add filter options by branch name
+def _thumb(file_field, size=50):
+    if file_field:
+        return format_html('<img src="{}" style="width:{}px;height:{}px;object-fit:cover;border-radius:4px" />', file_field.url, size, size)
+    return "—"
 
-    # Inline editing for BranchTeam (inside ParentBranch admin)
-    inlines = [BranchTeamInline]
+
+class BranchScopedAdmin(admin.ModelAdmin):
+    """Limits rows and branch choices to the branches the current user manages."""
+
+    branch_lookup = "branch__branch_id__in"
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        # Allow superusers to see all branches
-        if request.user.is_superuser:
-            return qs
-        # Restrict other users to their assigned branches
-        return qs.filter(manager=request.user)
+        ids = admin_branch_ids(request.user)
+        return qs if ids is None else qs.filter(**{self.branch_lookup: ids})
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name in ("branch", "parent"):
+            ids = admin_branch_ids(request.user)
+            if ids is not None and db_field.name == "branch":
+                kwargs["queryset"] = ParentBranch.objects.filter(branch_id__in=ids)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
-class BranchTeamAdmin(admin.ModelAdmin):
-    list_display = ('branch', 'member_name', 'designation', 'member_image_preview')
+class BranchTeamInline(admin.TabularInline):
+    model = BranchTeam
+    extra = 1
+    fields = ('member_name', 'designation', 'member_type', 'term', 'member_image', 'display_order')
+
+
+class BranchGalleryInline(admin.TabularInline):
+    model = BranchGalleryImage
+    extra = 1
+    fields = ('image', 'caption', 'display_order')
+
+
+@admin.register(ParentBranch)
+class ParentBranchAdmin(BranchScopedAdmin):
+    branch_lookup = "branch_id__in"
+    list_display = ('name', 'branch_type', 'parent', 'district', 'province', 'is_active', 'in_about_menu', 'display_order', 'image_preview')
+    list_editable = ('is_active', 'in_about_menu', 'display_order')
+    list_filter = ('branch_type', 'in_about_menu', 'province', 'is_active')
+    search_fields = ('name', 'district', 'address')
+    prepopulated_fields = {'slug': ('name',)}
+    inlines = [BranchTeamInline, BranchGalleryInline]
+    fieldsets = (
+        (None, {'fields': ('name', 'slug', 'branch_type', 'parent', 'is_active', 'in_about_menu', 'display_order')}),
+        ('Public profile', {'fields': ('tagline', 'description', 'main_image', 'established_date')}),
+        ('Location & contact', {'fields': ('address', 'district', 'province', 'map_url', 'phone', 'email', 'opening_hours')}),
+        ('Social', {'fields': ('facebook_url', 'instagram_url')}),
+        ('Management', {'fields': ('manager',)}),
+    )
+
+    def image_preview(self, obj):
+        return _thumb(obj.main_image)
+
+    image_preview.short_description = "Image"
+
+    def has_add_permission(self, request):
+        # New chapters are created nationally; branch admins edit their own.
+        return user_is_national_admin(request.user)
+
+    def has_delete_permission(self, request, obj=None):
+        return user_is_national_admin(request.user)
+
+    def get_readonly_fields(self, request, obj=None):
+        if user_is_national_admin(request.user):
+            return ()
+        return ('slug', 'branch_type', 'parent', 'is_active', 'in_about_menu', 'display_order', 'manager')
+
+
+@admin.register(BranchTeam)
+class BranchTeamAdmin(BranchScopedAdmin):
+    list_display = ('member_name', 'designation', 'member_type', 'term', 'branch', 'member_image_preview')
+    list_filter = ('member_type', 'branch')
+    search_fields = ('member_name', 'designation')
 
     def member_image_preview(self, obj):
-        if obj.member_image:
-            return format_html(f'<img src="{obj.member_image.url}" style="width: 50px; height: 50px;" />')
-        return "No Image"
+        return _thumb(obj.member_image)
 
     member_image_preview.short_description = "Image"
 
 
-# Inline model for ProgramImage
+@admin.register(BranchGalleryImage)
+class BranchGalleryImageAdmin(BranchScopedAdmin):
+    list_display = ('branch', 'caption', 'display_order', 'image_preview')
+    list_filter = ('branch',)
+
+    def image_preview(self, obj):
+        return _thumb(obj.image)
+
+    image_preview.short_description = "Image"
+
+
 class ProgramImageInline(admin.TabularInline):
     model = ProgramImage
-    extra = 1  # Allows adding one additional image by default
+    extra = 1
 
 
 @admin.register(Program)
-class ProgramAdmin(admin.ModelAdmin):
+class ProgramAdmin(BranchScopedAdmin):
     list_display = ('title', 'branch', 'program_date', 'coordinator_name', 'image_tag')
     search_fields = ('title', 'coordinator_name')
     list_filter = ('branch', 'program_date')
-
-    # Customize the fields shown in the ProgramAdmin form
+    date_hierarchy = 'program_date'
     fieldsets = (
         (None, {
             'fields': ('title', 'description', 'program_date', 'coordinator_name', 'image', 'branch')
         }),
     )
-
-    # Add the ProgramImage inline for related images
     inlines = [ProgramImageInline]
 
-    # Display the main image for Program
     def image_tag(self, obj):
-        if obj.image:
-            return mark_safe(f'<img src="{obj.image.url}" width="100" />')
-        return "No image"
+        return _thumb(obj.image, 80)
 
-    image_tag.allow_tags = True  # Allow HTML in this field
+    image_tag.short_description = "Image"
 
 
 @admin.register(ProgramImage)
-class ProgramImageAdmin(admin.ModelAdmin):
+class ProgramImageAdmin(BranchScopedAdmin):
+    branch_lookup = "program__branch__branch_id__in"
     list_display = ('program', 'image', 'caption')
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        ids = admin_branch_ids(request.user)
+        if db_field.name == "program" and ids is not None:
+            kwargs["queryset"] = Program.objects.filter(branch__branch_id__in=ids)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
     search_fields = ('program__title', 'caption')
-
-
-# Registering models and admin configurations
-admin.site.register(ParentBranch, ParentBranchAdmin)
-admin.site.register(BranchTeam, BranchTeamAdmin)

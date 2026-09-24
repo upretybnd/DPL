@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block seo %}{% include 'include/seo.html' with title="National admins · DPL MIS" noindex=True %}{% endblock %}
+
+{% block content %}
+{% include 'reports/_dash_shell.html' with eyebrow="Access control" title="National admins" active="national_admins" %}
+
+<section class="container-page py-10">
+    <div class="grid gap-8 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+            <p class="text-sm muted">National admins see every branch, review and approve reports, create branches and appoint Branch Admins. Site superusers are always national admins.</p>
+            <div class="table-wrap mt-4">
+                <table class="table">
+                    <thead><tr><th>Person</th><th>Since</th><th class="sr-only">Actions</th></tr></thead>
+                    <tbody class="divide-y divide-line">
+                    {% for role in admins %}
+                        <tr>
+                            <td><p class="font-semibold text-ink-900">{{ role.user.get_full_name|default:role.user.username }}</p><p class="text-xs muted">{{ role.user.email }}</p></td>
+                            <td class="text-sm muted">{{ role.created_at|date:"j M Y" }}</td>
+                            <td class="text-right">
+                                {% if role.user != request.user %}
+                                <form method="post" onsubmit="return confirm('Remove national admin access?');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="remove" value="{{ role.id }}">
+                                    <button type="submit" class="btn btn-ghost btn-sm !text-red-700">Remove</button>
+                                </form>
+                                {% else %}<span class="text-xs muted">You</span>{% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="3" class="py-10 text-center muted">No national admin roles yet (superusers still have full access).</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <form method="post" class="card card-body h-fit" novalidate>
+            {% csrf_token %}
+            <h2 class="display-md">Add a national admin</h2>
+            <div class="mt-5">{% include 'include/field.html' with field=form.email label="Their account email" placeholder="name@example.com" %}</div>
+            <button type="submit" class="btn btn-primary mt-6 w-full"><i data-lucide="shield-plus" class="size-4"></i> Make national admin</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

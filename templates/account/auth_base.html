@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block seo %}{% include 'include/seo.html' with title=page_title|default:"Account" noindex=True %}{% endblock %}
+{% block content %}
+<section class="container-page py-10 sm:py-16">
+    <div class="grid overflow-hidden rounded-[2rem] border border-line bg-white shadow-[var(--shadow-lift)] lg:grid-cols-2">
+        <div class="px-6 py-10 sm:px-12 sm:py-14">
+            <div class="mx-auto max-w-md">
+                {% block auth_body %}{% endblock %}
+            </div>
+        </div>
+        <div class="relative hidden min-h-[560px] lg:block">
+            <img src="{{ default_cover_url }}" alt="" class="absolute inset-0 size-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/60 to-ink-950/20"></div>
+            <div class="absolute inset-x-0 bottom-0 p-12 text-white">
+                <p class="font-display text-3xl font-semibold leading-snug text-balance">A library in every community, a reader in every home.</p>
+                <div class="mt-8 flex flex-wrap gap-6 text-sm text-white/80">
+                    <span class="inline-flex items-center gap-2"><i data-lucide="book-open" class="size-4 text-ember-400"></i> Free membership</span>
+                    <span class="inline-flex items-center gap-2"><i data-lucide="messages-square" class="size-4 text-ember-400"></i> Community forum</span>
+                    <span class="inline-flex items-center gap-2"><i data-lucide="calendar-days" class="size-4 text-ember-400"></i> Programs near you</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

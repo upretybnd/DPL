@@ -1,359 +1,258 @@
-from datetime import datetime
-from django.utils import timezone
+import json
+
 from django.contrib import messages
-from django.core.paginator import Paginator
-from django.http import JsonResponse
-from django.shortcuts import  redirect
-from django.views.decorators.csrf import csrf_exempt
-from .forms import ThreadForm
-from .models import Category, Thread, Reply
-from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from .models import UserProfile, UserPostCount
-from .forms import UserProfileForm
+from django.core.paginator import Paginator
+from django.db.models import Count, F, Prefetch
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.views.decorators.http import require_POST
+
+from .forms import ThreadForm, UserProfileForm
+from .models import Category, Reply, Thread, UserPostCount, UserProfile
+
+REPLIES_PER_PAGE = 5
 
 
 # View for listing all categories
 def category_list(request):
-    categories = Category.objects.all().order_by('id')  # Orders by the creation order
-
-    for category in categories:
-        # Fetch the latest 5 threads for each category
-        category.latest_threads = category.threads.all().order_by('-created_at')[:5]
+    categories = Category.objects.all().order_by('id')
 
     paginator = Paginator(categories, 5)  # Display 5 categories per page
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    for category in page_obj:
+        # Fetch the latest 5 threads for each category on this page
+        category.latest_threads = (
+            category.threads.select_related('author__profile', 'last_reply__author')
+            .annotate(reply_count=Count('replies'))
+            .order_by('-created_at')[:5]
+        )
 
     return render(request, 'discussion/category_list.html', {
         'categories': page_obj,
     })
 
+
 # View for displaying threads in a category
 def category_threads(request, category_id):
     category = get_object_or_404(Category, id=category_id)
-    threads = Thread.objects.filter(category=category)
+    threads = (
+        Thread.objects.filter(category=category)
+        .select_related('author__profile', 'last_reply__author')
+        .annotate(reply_count=Count('replies'))
+        .order_by('-created_at')
+    )
 
-
-
-    # Increment the view count for threads
-    for thread in threads:
-        thread.views += 1
-        thread.save()
-
-    # Add the last reply's username for each thread
-    for thread in threads:
-        last_reply = thread.replies.last()  # Get the latest reply
-        if last_reply:
-            thread.last_reply = last_reply  # Assign the Reply instance
-            thread.last_reply_username = last_reply.author.username  # Fetch username for display, if needed
-        else:
-            thread.last_reply = None
-
-    # Create a paginator object, limiting to 5 threads per page
     paginator = Paginator(threads, 5)  # Show 5 threads per page
-    page_number = request.GET.get('page')  # Get the page number from the query string
-    page_obj = paginator.get_page(page_number)  # Get the page of threads
+    page_obj = paginator.get_page(request.GET.get('page'))
 
     return render(request, 'discussion/category_threads.html', {
         'category': category,
-        'threads': page_obj,  # Pass the paginated threads
+        'threads': page_obj,
     })
+
+
+def _toggle_like(obj, user):
+    if obj.likes.filter(pk=user.pk).exists():
+        obj.likes.remove(user)
+        return False
+    obj.likes.add(user)
+    return True
+
+
+def _create_reply(thread, user, content):
+    reply = Reply.objects.create(thread=thread, author=user, content=content)
+    thread.last_reply = reply
+    thread.save(update_fields=['last_reply'])
+    return reply
+
+
+def _last_page_url(request, thread):
+    last_page = Paginator(thread.replies.all(), REPLIES_PER_PAGE).num_pages
+    return f'{thread.get_absolute_url()}?page={last_page}'
+
+
 # View for displaying a single thread
-  # Ensures that the user is logged in before they can post a reply
-
 def thread_detail(request, thread_pk):
-    # Get the thread
-    thread = get_object_or_404(Thread, pk=thread_pk)
-    title = thread.author.profile.custom_title  # Access custom_title instead of title
-    thread.views += 1
-    thread.save()
+    thread = get_object_or_404(Thread.objects.select_related('author__profile', 'category'), pk=thread_pk)
 
-    # Handle like on the thread post
-    if request.method == 'POST' and 'like_thread' in request.POST:
-        if request.user.is_authenticated:
-            if request.user in thread.likes.all():
-                thread.likes.remove(request.user)  # Unlike the thread
-                messages.success(request, 'You have unliked this thread.')
-            else:
-                thread.likes.add(request.user)  # Like the thread
-                messages.success(request, 'You have liked this thread.')
-            thread.save()
-        else:
-            messages.error(request, 'You must be logged in to like this thread.')
-
-        return redirect('thread_detail', thread_pk=thread.pk)
-
-    # Handle like on a reply
-    if request.method == 'POST' and 'like_reply' in request.POST:
-        reply = get_object_or_404(Reply, id=request.POST.get('like_reply'))
-
-        if request.user.is_authenticated:
-            if request.user in reply.likes.all():
-                reply.likes.remove(request.user)  # Unlike the reply
-                messages.success(request, 'You have unliked this reply.')
-            else:
-                reply.likes.add(request.user)  # Like the reply
-                messages.success(request, 'You have liked this reply.')
-            reply.save()
-        else:
-            messages.error(request, 'You must be logged in to like this reply.')
-
-        return redirect('thread_detail', thread_pk=thread.pk)
-
-    # Handle reply submission to the main thread
-    if request.method == 'POST' and 'reply_thread' in request.POST:
-        content = request.POST.get('content')
-
-        if not content:
-            messages.error(request, 'Reply content cannot be empty.')
-            return redirect('thread_detail', thread_pk=thread.pk)
-
-        # Create reply
-        Reply.objects.create(
-            thread=thread,
-            author=request.user,
-            content=content
-        )
-
-        messages.success(request, 'Your reply has been posted!')
-
-        # Redirect to the last page of replies
-        page_number = request.GET.get('page')
-        replies_list = thread.replies.all()
-        paginator = Paginator(replies_list, 5)  # Show 5 replies per page
-        last_page = paginator.num_pages
-        url = f'{request.path}?page={last_page}'
-        return redirect(url)  # Redirect to the last page
-
-    # Pagination for replies
-    replies_list = thread.replies.all()
-    paginator = Paginator(replies_list, 5)  # Show 5 replies per page
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-
-    thread.author.profile.update_custom_title()
-
-    return render(request, 'discussion/thread_details.html', {
-        'thread': thread,
-        'replies': page_obj,  # Use paginated replies
-        'title': title,
-    })
-
-
-# View for creating a new thread
-@login_required
-def create_reply(request, thread_pk):
-    # Retrieve the thread using the primary key (thread_pk)
-    thread = get_object_or_404(Thread, pk=thread_pk)
-
-    # Handle the form submission for the new reply
     if request.method == 'POST':
-        content = request.POST.get('content')
+        if not request.user.is_authenticated:
+            messages.error(request, 'You must be logged in to do that.')
+            return redirect(f"/accounts/login/?next={thread.get_absolute_url()}")
 
-        # Check if the reply content is not empty
-        if not content:
-            messages.error(request, 'Reply content cannot be empty.')
+        if 'like_thread' in request.POST:
+            liked = _toggle_like(thread, request.user)
+            messages.success(request, 'You have liked this thread.' if liked else 'You have unliked this thread.')
             return redirect('thread_detail', thread_pk=thread.pk)
 
-        # Create the reply associated with the thread and the logged-in user
-        reply = Reply.objects.create(
-            thread=thread,
-            author=request.user,
-            content=content
-        )
+        if 'like_reply' in request.POST:
+            reply = get_object_or_404(Reply, id=request.POST.get('like_reply'), thread=thread)
+            liked = _toggle_like(reply, request.user)
+            messages.success(request, 'You have liked this reply.' if liked else 'You have unliked this reply.')
+            return redirect('thread_detail', thread_pk=thread.pk)
 
-        # Update the thread's last reply to this newly created reply
-        thread.last_reply = reply  # Directly update the last_reply field
-        thread.save()  # Save the thread to persist the last_reply change
+        if 'reply_thread' in request.POST:
+            content = request.POST.get('content', '').strip()
+            if not content:
+                messages.error(request, 'Reply content cannot be empty.')
+                return redirect('thread_detail', thread_pk=thread.pk)
+            _create_reply(thread, request.user, content)
+            messages.success(request, 'Your reply has been posted!')
+            return redirect(_last_page_url(request, thread))
 
-        user_profile = request.user.profile
-        user_profile.update_post_count()
+        return redirect('thread_detail', thread_pk=thread.pk)
 
-        # Success message and redirect to the thread details page
-        messages.success(request, 'Your reply has been posted!')
-        return redirect('thread_detail', thread_pk=thread.pk)  # Redirect to the same thread page
+    # Atomic increment so concurrent visits don't overwrite each other
+    Thread.objects.filter(pk=thread.pk).update(views=F('views') + 1)
+    thread.refresh_from_db(fields=['views'])
 
-    # If not a POST request, just render the thread details page
+    replies_list = (
+        thread.replies.select_related('author__profile')
+        .prefetch_related('likes')
+        .order_by('created_at')
+    )
+    page_obj = Paginator(replies_list, REPLIES_PER_PAGE).get_page(request.GET.get('page'))
+
     return render(request, 'discussion/thread_details.html', {
         'thread': thread,
+        'replies': page_obj,
+        'thread_liked': request.user.is_authenticated and thread.likes.filter(pk=request.user.pk).exists(),
+        'liked_reply_ids': set(
+            request.user.liked_replies.filter(thread=thread).values_list('id', flat=True)
+        ) if request.user.is_authenticated else set(),
     })
 
+
 @login_required
+@require_POST
+def create_reply(request, thread_pk):
+    thread = get_object_or_404(Thread, pk=thread_pk)
+    content = request.POST.get('content', '').strip()
+
+    if not content:
+        messages.error(request, 'Reply content cannot be empty.')
+        return redirect('thread_detail', thread_pk=thread.pk)
+
+    _create_reply(thread, request.user, content)
+    messages.success(request, 'Your reply has been posted!')
+    return redirect(_last_page_url(request, thread))
+
+
+@login_required
+@require_POST
 def like_thread(request, thread_id):
     thread = get_object_or_404(Thread, id=thread_id)
-
-    if request.user in thread.likes.all():
-        thread.likes.remove(request.user)
-        liked = False
-    else:
-        thread.likes.add(request.user)
-        liked = True
-
-    return JsonResponse({
-        'success': True,
-        'liked': liked,
-        'total_likes': thread.likes.count()
-    })
+    liked = _toggle_like(thread, request.user)
+    return JsonResponse({'success': True, 'liked': liked, 'total_likes': thread.likes.count()})
 
 
 @login_required
+@require_POST
 def like_reply(request, reply_id):
     reply = get_object_or_404(Reply, id=reply_id)
-
-    if request.user in reply.likes.all():
-        reply.likes.remove(request.user)
-        liked = False
-    else:
-        reply.likes.add(request.user)
-        liked = True
-
-    return JsonResponse({
-        'success': True,
-        'liked': liked,
-        'total_likes': reply.likes.count()
-    })
+    liked = _toggle_like(reply, request.user)
+    return JsonResponse({'success': True, 'liked': liked, 'total_likes': reply.likes.count()})
 
 
-@csrf_exempt
+def _content_from_json(request):
+    try:
+        return (json.loads(request.body or b'{}').get('content') or '').strip()
+    except (ValueError, AttributeError):
+        return ''
+
+
+@require_POST
 def edit_thread(request, thread_id):
-    # Check if the user is authenticated
     if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'message': 'You must be logged in to edit threads.'}, status=400)
+        return JsonResponse({'success': False, 'message': 'You must be logged in to edit threads.'}, status=401)
 
-    # Fetch the thread object or return 404 if not found
     thread = get_object_or_404(Thread, id=thread_id)
-
-    # Ensure the user is the author of the thread
     if thread.author != request.user:
         return JsonResponse({'success': False, 'message': 'You are not authorized to edit this thread.'}, status=403)
 
-    # Handle POST request (for content update)
-    if request.method == 'POST':
-        # Parse the JSON request body
-        import json
-        data = json.loads(request.body)
-        new_content = data.get('content')
+    new_content = _content_from_json(request)
+    if not new_content:
+        return JsonResponse({'success': False, 'message': 'Content is required.'}, status=400)
 
-        # If no content provided, return error
-        if not new_content:
-            return JsonResponse({'success': False, 'message': 'Content is required.'}, status=400)
+    thread.content = new_content
+    thread.save(update_fields=['content', 'updated_at'])
+    return JsonResponse({'success': True, 'message': 'Thread updated successfully!', 'new_content': new_content})
 
-        # Update the thread content
-        thread.content = new_content
-        thread.save()
 
-        # Return success response
-        return JsonResponse({'success': True, 'message': 'Thread updated successfully!', 'new_content': new_content})
-
-    # If not POST request, return an error
-    return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=400)
-
-# View to edit a reply
-@csrf_exempt
+@require_POST
 def edit_reply(request, reply_id):
     if not request.user.is_authenticated:
-        return JsonResponse({'success': False, 'message': 'You must be logged in to edit replies.'}, status=400)
+        return JsonResponse({'success': False, 'message': 'You must be logged in to edit replies.'}, status=401)
 
     reply = get_object_or_404(Reply, id=reply_id)
-
-    # Check if the current user is the author of the reply
     if reply.author != request.user:
         return JsonResponse({'success': False, 'message': 'You are not authorized to edit this reply.'}, status=403)
 
-    if request.method == 'POST':
-        import json
-        data = json.loads(request.body)
-        new_content = data.get('content')
+    new_content = _content_from_json(request)
+    if not new_content:
+        return JsonResponse({'success': False, 'message': 'Content is required.'}, status=400)
 
-        if not new_content:
-            return JsonResponse({'success': False, 'message': 'Content is required.'}, status=400)
+    reply.content = new_content
+    reply.save(update_fields=['content', 'updated_at'])
+    return JsonResponse({'success': True, 'message': 'Reply updated successfully!', 'new_content': new_content})
 
-        # Update the reply content
-        reply.content = new_content
-        reply.save()
 
-        # Return a success response
-        return JsonResponse({'success': True, 'message': 'Reply updated successfully!', 'new_content': new_content})
-
-    return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=400)
-
-# creating thread
+@login_required
 def create_thread(request):
     if request.method == 'POST':
         form = ThreadForm(request.POST)
         if form.is_valid():
             thread = form.save(commit=False)
-            thread.author = request.user  # Set the logged-in user as the author
+            thread.author = request.user
             thread.save()
-            return redirect('thread_detail', thread_pk=thread.pk)  # Redirect to the created thread's detail page
+            return redirect('thread_detail', thread_pk=thread.pk)
     else:
-        form = ThreadForm()
+        form = ThreadForm(initial={'category': request.GET.get('category')})
 
     return render(request, 'discussion/create_thread.html', {'form': form})
 
 
-
-
 @login_required
 def profile_view(request, username=None):
-    # If no username is provided, fall back to the logged-in user's profile
-    if username is None:
-        username = request.user.username
+    profile_user = get_object_or_404(User, username=username or request.user.username)
+    profile, _ = UserProfile.objects.get_or_create(user=profile_user)
 
-    # Try to get the profile of the requested user
-    user = get_object_or_404(User, username=username)
+    is_owner = profile_user == request.user
+    edit_mode = is_owner and request.GET.get('edit') == 'true'
 
-    # Check if the user is trying to edit the profile
-    edit_mode = request.GET.get('edit') == 'true'
-    last_login = user.last_login
-    if last_login:
-        days_since_last_login = (timezone.now() - last_login).days
-    else:
-        days_since_last_login = None  # If no login, it can be None or 0
-
-
-    # Try to get the user's profile
-    try:
-        profile = user.profile
-    except UserProfile.DoesNotExist:
-        profile = None
-
-    if request.method == 'POST' and edit_mode:
-        # If the profile exists, populate the form with its data
-        if profile:
-            form = UserProfileForm(request.POST, request.FILES, instance=profile)
-        else:
-            # If no profile exists, create a new form without existing data
-            form = UserProfileForm(request.POST, request.FILES)
-
+    if request.method == 'POST':
+        if not is_owner:
+            messages.error(request, 'You can only edit your own profile.')
+            return redirect('profile', username=profile_user.username)
+        form = UserProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
-            user_profile = form.save(commit=False)
-            user_profile.user = user  # Ensure the user is set to the correct one
-            user_profile.save()
-            return redirect('profile', username=username)  # Redirect back to the profile page after saving
+            form.save()
+            messages.success(request, 'Profile updated.')
+            return redirect('profile', username=profile_user.username)
+        edit_mode = True
     else:
-        # If the user has a profile, display it, otherwise show an empty form
-        if profile:
-            form = UserProfileForm(instance=profile)
-        else:
-            form = UserProfileForm()  # Display an empty form if no profile exists
+        form = UserProfileForm(instance=profile)
 
-    # Access the UserPostCount directly for the user
-    try:
-        user_post_count = UserPostCount.objects.get(user=user)
-        post_count = user_post_count.total_count
-    except UserPostCount.DoesNotExist:
-        post_count = 0  # Default to 0 if no UserPostCount object exists
+    days_since_last_login = None
+    if profile_user.last_login:
+        days_since_last_login = (timezone.now() - profile_user.last_login).days
 
-    title = profile.get_title_based_on_post_count() if profile else 'Member'
+    post_count = UserPostCount.objects.filter(user=profile_user).values_list('total_count', flat=True).first() or 0
 
     return render(request, 'account/profile.html', {
-        'user': user,
+        'profile_user': profile_user,
+        'profile': profile,
+        'is_owner': is_owner,
         'edit_mode': edit_mode,
         'form': form,
         'post_count': post_count,
-        'title': title,
-        'days_since_last_login': days_since_last_login
+        'rank': profile.rank(),
+        'days_since_last_login': days_since_last_login,
+        'recent_threads': profile_user.threads.select_related('category').order_by('-created_at')[:5],
+        'reply_count': profile_user.replies.count(),
+        'visit_streak': getattr(getattr(profile_user, 'uservisitstreak', None), 'visit_streak', 0),
     })

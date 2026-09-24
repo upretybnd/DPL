@@ -1,0 +1,20 @@
+{% load widget_tweaks %}{% comment %}Args: field, label (optional override), placeholder, span (grid col class){% endcomment %}
+<div class="{{ span }}">
+    {% if field.field.widget.input_type == 'checkbox' %}
+        <label class="flex items-start gap-3 text-sm">
+            {% render_field field class="checkbox mt-0.5" %}
+            <span>{{ label|default:field.label }}</span>
+        </label>
+    {% else %}
+        <label for="{{ field.id_for_label }}" class="label">{{ label|default:field.label }}{% if not field.field.required %} <span class="font-normal muted">(optional)</span>{% endif %}</label>
+        {% if field.field.widget.input_type == 'file' %}
+            {% render_field field class="block w-full rounded-xl border border-dashed border-line bg-white px-4 py-3 text-sm file:mr-4 file:rounded-full file:border-0 file:bg-ink-900 file:px-4 file:py-1.5 file:text-sm file:font-semibold file:text-white hover:file:bg-ink-800" %}
+        {% elif placeholder %}
+            {% render_field field class="input" placeholder=placeholder %}
+        {% else %}
+            {% render_field field class="input" %}
+        {% endif %}
+    {% endif %}
+    {% if field.help_text %}<p class="help">{{ field.help_text|safe }}</p>{% endif %}
+    {% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+</div>

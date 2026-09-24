@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block seo %}{% include 'include/seo.html' with title="Access needed" noindex=True %}{% endblock %}
+
+{% block content %}
+<section class="container-page max-w-2xl py-24 text-center">
+    <span class="mx-auto grid size-16 place-items-center rounded-3xl bg-ember-50 text-ember-600"><i data-lucide="lock-keyhole" class="size-8"></i></span>
+    <h1 class="display-lg mt-6">You don't have access to this page</h1>
+    <p class="lead mt-4">{{ exception|default:"This part of DPL MIS needs a different role." }}</p>
+    <p class="mt-2 text-sm muted">If you think you should have access, ask your Branch Admin or the national team.</p>
+    <div class="mt-8 flex flex-wrap justify-center gap-3">
+        <a href="{% url 'portal' %}" class="btn btn-dark">DPL MIS home</a>
+        <a href="{% url 'home' %}" class="btn btn-outline">Back to the website</a>
+    </div>
+</section>
+{% endblock %}

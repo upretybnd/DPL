@@ -1,0 +1,12 @@
+{% load static %}
+<figure class="card overflow-hidden text-center">
+    <div class="aspect-square overflow-hidden bg-paper-2">
+        <img src="{% if member.member_image %}{{ member.member_image.url }}{% else %}{% static 'img/default-avatar.svg' %}{% endif %}"
+             alt="{{ member.member_name }}" loading="lazy" class="img-cover">
+    </div>
+    <figcaption class="p-4">
+        <p class="font-display text-lg font-semibold text-ink-900">{{ member.member_name }}</p>
+        <p class="text-sm font-medium text-ember-600">{{ member.designation }}</p>
+        {% if member.term and member.member_type != 'board' %}<p class="mt-0.5 text-xs muted">{{ member.term }}</p>{% endif %}
+    </figcaption>
+</figure>

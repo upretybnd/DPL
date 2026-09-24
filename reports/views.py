@@ -1,5 +1,6 @@
-import json
+import calendar
 import csv
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.core.mail import send_mail
@@ -9,12 +10,14 @@ from django.db.models.functions import TruncMonth
 from django.http import HttpResponse
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.views.decorators.http import require_POST
 
 from branches.models import ParentBranch
-from .forms import ProjectEvidenceForm, ProjectForm, ProjectReportForm, ReportCommentForm, ReviewActionForm
+from .forms import ProjectEvidenceForm, ProjectForm, ProjectReportForm, ReportCommentForm
 from .models import (
     AuditLog,
     BranchRole,
@@ -26,18 +29,32 @@ from .models import (
     ReportingPeriod,
     ReportStatusHistory,
 )
+from .audit import log_audit
 from .permissions import (
+    can_admin_branch,
     can_manage_branch,
     require_branch_manage_access,
     require_branch_view_access,
     role_required,
     user_branch_ids,
+    user_has_portal_access,
     user_is_national_admin,
 )
 
 
+def portal(request):
+    """Public front door of the management system: explains it and routes staff to their dashboard."""
+    if user_has_portal_access(request.user):
+        return redirect("report_home")
+    return render(request, "reports/portal.html", {
+        "no_access": request.user.is_authenticated,
+    })
+
+
 @login_required
 def report_home(request):
+    if not user_has_portal_access(request.user):
+        return redirect("portal")
     if user_is_national_admin(request.user):
         return redirect("national_dashboard")
     return redirect("branch_dashboard")
@@ -45,8 +62,33 @@ def report_home(request):
 
 @login_required
 def my_notifications(request):
-    page_obj = Paginator(Notification.objects.filter(user=request.user), 25).get_page(request.GET.get("page"))
-    return render(request, "reports/my_notifications.html", {"notifications": page_obj})
+    notifications = Notification.objects.filter(user=request.user).order_by("-created_at")
+    page_obj = Paginator(notifications, 25).get_page(request.GET.get("page"))
+    return render(request, "reports/my_notifications.html", {
+        "notifications": page_obj,
+        "unread_total": notifications.filter(is_read=False).count(),
+    })
+
+
+@login_required
+@require_POST
+def notifications_mark_read(request):
+    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    messages.success(request, "All notifications marked as read.")
+    return redirect("my_notifications")
+
+
+@login_required
+def notification_open(request, notification_id):
+    """Marks one notification read, then follows its link (internal paths only)."""
+    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+    if not notification.is_read:
+        notification.is_read = True
+        notification.save(update_fields=["is_read"])
+    link = notification.link or ""
+    if link.startswith("/") and not link.startswith("//"):
+        return redirect(link)
+    return redirect("my_notifications")
 
 
 def _parse_period(period_text):
@@ -84,15 +126,7 @@ def _draw_wrapped_text(pdf, text, x, y, max_width, line_height=14):
     return y
 
 
-def _log_audit(actor, action, entity_type, entity_id, branch=None, details=""):
-    AuditLog.objects.create(
-        actor=actor if getattr(actor, "is_authenticated", False) else None,
-        action=action,
-        entity_type=entity_type,
-        entity_id=entity_id,
-        branch=branch,
-        details=details[:1500],
-    )
+_log_audit = log_audit
 
 
 def _notify(users, title, message, link=""):
@@ -148,6 +182,7 @@ def branch_dashboard(request):
             "projects": projects[:10],
             "stats": stats,
             "current_period": timezone.now().strftime("%Y-%m"),
+            "can_admin_selected": bool(selected_branch) and can_admin_branch(request.user, selected_branch),
         },
     )
 
@@ -219,14 +254,24 @@ def national_analytics(request):
         request,
         "reports/national_analytics.html",
         {
-            "trend_labels_json": json.dumps(trend_labels),
-            "trend_totals_json": json.dumps(trend_totals),
-            "trend_approved_json": json.dumps(trend_approved),
-            "trend_beneficiaries_json": json.dumps(trend_beneficiaries),
-            "branch_rankings": branch_rankings,
-            "sdg_distribution": sdg_distribution,
-            "sdg_labels_json": json.dumps([row["label"] for row in sdg_distribution[:12]]),
-            "sdg_counts_json": json.dumps([row["count"] for row in sdg_distribution[:12]]),
+            # Raw lists: the template serialises them once with json_script.
+            "chart_data": {
+                "labels": trend_labels,
+                "totals": trend_totals,
+                "approved": trend_approved,
+                "beneficiaries": trend_beneficiaries,
+                "sdg_labels": [row["label"] for row in sdg_distribution[:12]],
+                "sdg_counts": [row["count"] for row in sdg_distribution[:12]],
+            },
+            "monthly_rows": [
+                {"label": label, "total": total, "approved": approved, "beneficiaries": people}
+                for label, total, approved, people in zip(trend_labels, trend_totals, trend_approved, trend_beneficiaries)
+            ],
+            "totals": {
+                "projects": sum(trend_totals),
+                "approved": sum(trend_approved),
+                "beneficiaries": sum(trend_beneficiaries),
+            },
         },
     )
 
@@ -304,7 +349,11 @@ def public_project_list(request):
             "sdg": sdg,
             "public_branches": public_branches,
             "available_years": available_years,
-            "month_choices": range(1, 13),
+            "month_choices": [(i, calendar.month_name[i]) for i in range(1, 13)],
+            "filter_query": urlencode({k: v for k, v in {"q": q, "branch": branch, "year": year, "month": month, "sdg": sdg}.items() if v}),
+            "summary": published_projects.aggregate(
+                count=Count("id"), people=Sum("beneficiaries_count"), hours=Sum("volunteer_hours")
+            ),
         },
     )
 
@@ -359,6 +408,46 @@ def project_create(request):
     )
 
 
+EDITABLE_STATUSES = (Project.STATUS_DRAFT, Project.STATUS_REJECTED)
+
+
+@role_required(BranchRole.ROLE_REPORTER)
+def project_edit(request, project_id):
+    project = get_object_or_404(Project.objects.select_related("branch"), id=project_id)
+    require_branch_manage_access(request.user, project.branch)
+    if project.status not in EDITABLE_STATUSES:
+        messages.warning(request, "Only drafts or reports sent back for changes can be edited.")
+        return redirect("project_detail", project_id=project.id)
+    report, _ = ProjectReport.objects.get_or_create(project=project)
+    form = ProjectForm(request.POST or None, instance=project)
+    report_form = ProjectReportForm(request.POST or None, instance=report)
+    form.fields["branch"].queryset = ParentBranch.objects.filter(branch_id__in=user_branch_ids(request.user))
+    if request.method == "POST" and form.is_valid() and report_form.is_valid():
+        updated = form.save(commit=False)
+        require_branch_manage_access(request.user, updated.branch)
+        updated.save()
+        report_form.save()
+        _log_audit(request.user, "project_updated", "project", project.id, project.branch, ", ".join(form.changed_data + report_form.changed_data))
+        messages.success(request, "Project report updated.")
+        return redirect("project_detail", project_id=project.id)
+    return render(request, "reports/project_form.html", {"form": form, "report_form": report_form, "mode": "edit", "project": project})
+
+
+@role_required(BranchRole.ROLE_REPORTER)
+@require_POST
+def project_delete(request, project_id):
+    project = get_object_or_404(Project.objects.select_related("branch"), id=project_id)
+    require_branch_manage_access(request.user, project.branch)
+    if project.status != Project.STATUS_DRAFT:
+        messages.error(request, "Only draft reports can be deleted.")
+        return redirect("project_detail", project_id=project.id)
+    _log_audit(request.user, "project_deleted", "project", project.id, project.branch, project.title)
+    branch_id = project.branch.branch_id
+    project.delete()
+    messages.success(request, f"Draft “{project.title}” deleted.")
+    return redirect(f"{reverse('branch_dashboard')}?branch={branch_id}")
+
+
 @role_required(BranchRole.ROLE_VIEWER)
 def project_detail(request, project_id):
     project = get_object_or_404(Project.objects.select_related("branch", "created_by"), id=project_id)
@@ -410,12 +499,17 @@ def project_detail(request, project_id):
             "can_review": user_is_national_admin(request.user),
             "evidence_form": evidence_form,
             "evidences": project.evidences.all(),
-            "review_form": ReviewActionForm(),
+            "review_actions": [
+                ("review", "Mark as reviewed", "btn-outline"),
+                ("approve", "Approve & publish", "btn-primary"),
+                ("reject", "Send back", "btn-danger"),
+            ] if project.status in (Project.STATUS_SUBMITTED, Project.STATUS_REVIEWED) else [],
         },
     )
 
 
 @role_required(BranchRole.ROLE_REPORTER)
+@require_POST
 def project_submit(request, project_id):
     project = get_object_or_404(Project, id=project_id)
     require_branch_manage_access(request.user, project.branch)
@@ -483,6 +577,7 @@ def project_submit(request, project_id):
 
 
 @role_required(BranchRole.ROLE_NATIONAL_ADMIN)
+@require_POST
 def project_review_action(request, project_id, action):
     if action not in {"review", "approve", "reject"}:
         messages.error(request, "Invalid review action.")
@@ -492,7 +587,7 @@ def project_review_action(request, project_id, action):
     if project.status not in [Project.STATUS_SUBMITTED, Project.STATUS_REVIEWED]:
         messages.warning(request, "Project is not in a reviewable state.")
         return redirect("project_detail", project_id=project.id)
-    review_note = ReviewActionForm(request.POST).data.get("note", "").strip() if request.method == "POST" else ""
+    review_note = request.POST.get("note", "").strip()
     if action == "review":
         next_status = Project.STATUS_REVIEWED
     else:
@@ -538,6 +633,7 @@ def project_review_action(request, project_id, action):
 
 
 @role_required(BranchRole.ROLE_REPORTER)
+@require_POST
 def evidence_delete(request, evidence_id):
     evidence = get_object_or_404(ProjectEvidence.objects.select_related("project__branch"), id=evidence_id)
     require_branch_manage_access(request.user, evidence.project.branch)
@@ -550,8 +646,9 @@ def evidence_delete(request, evidence_id):
 
 
 @role_required(BranchRole.ROLE_NATIONAL_ADMIN)
+@require_POST
 def toggle_reporting_period_lock(request):
-    period_text = request.GET.get("period")
+    period_text = request.POST.get("period")
     year, month = _parse_period(period_text)
     if not year or not month:
         messages.error(request, "Invalid period format. Use YYYY-MM.")
@@ -588,15 +685,20 @@ def toggle_reporting_period_lock(request):
 
 
 @role_required(BranchRole.ROLE_NATIONAL_ADMIN)
+@require_POST
 def send_submission_reminders(request):
-    period_text = request.GET.get("period", timezone.now().strftime("%Y-%m"))
+    period_text = request.POST.get("period") or timezone.now().strftime("%Y-%m")
     year, month = _parse_period(period_text)
     if not year or not month:
         messages.error(request, "Invalid period format. Use YYYY-MM.")
         return redirect("national_dashboard")
+    period_text = f"{year:04d}-{month:02d}"
+    # A project belongs to the period named on its report (the same rule project_submit uses);
+    # projects without a report period fall back to their event month.
+    no_report_period = models.Q(report__isnull=True) | models.Q(report__report_period="")
     target_projects = Project.objects.filter(
-        event_date__year=year,
-        event_date__month=month,
+        models.Q(report__report_period=period_text)
+        | (no_report_period & models.Q(event_date__year=year, event_date__month=month)),
         status__in=[Project.STATUS_DRAFT, Project.STATUS_REJECTED],
     ).select_related("created_by", "branch")
     reminder_count = 0
@@ -826,7 +928,11 @@ def audit_log_list(request):
         logs = logs.filter(action__icontains=action)
     paginator = Paginator(logs, 40)
     page_obj = paginator.get_page(request.GET.get("page"))
-    return render(request, "reports/audit_log_list.html", {"logs": page_obj, "action": action})
+    return render(request, "reports/audit_log_list.html", {
+        "logs": page_obj,
+        "action": action,
+        "filter_query": urlencode({"action": action}) if action else "",
+    })
 
 
 @role_required(BranchRole.ROLE_NATIONAL_ADMIN)

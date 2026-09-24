@@ -1,0 +1,55 @@
+{% extends 'mis/_workspace.html' %}
+{% load static %}
+{% block workspace %}
+<div class="grid gap-8 lg:grid-cols-3">
+    <div class="lg:col-span-2">
+        <h2 class="display-md">Team members <span class="text-base font-normal muted">({{ members|length }})</span></h2>
+        <div class="table-wrap mt-4">
+            <table class="table">
+                <thead><tr><th>Member</th><th>Group</th><th>Term</th><th class="text-right">Order</th><th class="sr-only">Actions</th></tr></thead>
+                <tbody class="divide-y divide-line">
+                {% for member in members %}
+                    <tr>
+                        <td>
+                            <div class="flex items-center gap-3">
+                                <img src="{% if member.member_image %}{{ member.member_image.url }}{% else %}{% static 'img/default-avatar.svg' %}{% endif %}" alt="" class="avatar size-10">
+                                <div><p class="font-semibold text-ink-900">{{ member.member_name }}</p><p class="text-xs muted">{{ member.designation }}</p></div>
+                            </div>
+                        </td>
+                        <td><span class="badge badge-soft">{{ member.get_member_type_display }}</span></td>
+                        <td class="text-sm">{{ member.term|default:"—" }}</td>
+                        <td class="text-right tabular-nums">{{ member.display_order }}</td>
+                        <td>
+                            <div class="flex justify-end gap-1">
+                                <a href="{% url 'mis_team_edit' branch.branch_id member.id %}" class="btn btn-ghost btn-sm" aria-label="Edit {{ member.member_name }}"><i data-lucide="pencil" class="size-4"></i></a>
+                                <form method="post" action="{% url 'mis_team_delete' branch.branch_id member.id %}" onsubmit="return confirm('Remove {{ member.member_name|escapejs }} from the team?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-ghost btn-sm !text-red-700" aria-label="Remove {{ member.member_name }}"><i data-lucide="trash-2" class="size-4"></i></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5" class="py-10 text-center muted">No team members yet. Add the first one using the form.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="card card-body h-fit" novalidate>
+        {% csrf_token %}
+        <h2 class="display-md">Add a member</h2>
+        <div class="mt-5 space-y-4">
+            {% include 'include/field.html' with field=form.member_name label="Name" %}
+            {% include 'include/field.html' with field=form.designation placeholder="President, Secretary…" %}
+            {% include 'include/field.html' with field=form.member_type label="Group" %}
+            {% include 'include/field.html' with field=form.term placeholder="2024–2026" %}
+            {% include 'include/field.html' with field=form.member_image label="Photo" %}
+            {% include 'include/field.html' with field=form.bio %}
+            {% include 'include/field.html' with field=form.display_order label="Display order" %}
+        </div>
+        <button type="submit" class="btn btn-primary mt-6 w-full"><i data-lucide="user-plus" class="size-4"></i> Add member</button>
+    </form>
+</div>
+{% endblock %}

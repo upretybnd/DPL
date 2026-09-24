@@ -1,0 +1,15 @@
+<article class="card card-hover group relative overflow-hidden">
+    <div class="aspect-[16/10] overflow-hidden bg-paper-2">
+        {% if program.image %}<img src="{{ program.image.url }}" alt="{{ program.title }}" loading="lazy" class="img-cover transition duration-500 group-hover:scale-105">{% endif %}
+    </div>
+    <div class="card-body">
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs muted">
+            <span class="inline-flex items-center gap-1"><i data-lucide="calendar" class="size-3.5 text-ember-500"></i>{{ program.program_date|date:"j M Y" }}</span>
+            <span class="inline-flex items-center gap-1"><i data-lucide="map-pin" class="size-3.5 text-ember-500"></i>{{ program.branch.name }}</span>
+        </div>
+        <h3 class="mt-2 text-lg font-semibold leading-snug">
+            <a href="{{ program.get_absolute_url }}" class="after:absolute after:inset-0">{{ program.title }}</a>
+        </h3>
+        <p class="mt-2 line-clamp-2 text-sm muted">{{ program.description|striptags }}</p>
+    </div>
+</article>

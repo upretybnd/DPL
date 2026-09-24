@@ -1,54 +1,45 @@
-name: Deploy to cPanel via Git
+name: Test and deploy
 
 on:
   push:
-    branches:
-      - main
+    branches: ["**"]
+  pull_request:
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Checkout the repository
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      # Step 2: Set up Python (optional, only needed if you run Django commands in the workflow)
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
-
-      # Step 3: Install dependencies (optional, only needed for local testing)
+          python-version: "3.12"
+          cache: pip
       - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run tests
+        env:
+          DEBUG: "True"
+          SECRET_KEY: ci-only-not-secret
         run: |
-          python -m venv venv
-          source venv/bin/activate
-          pip install -r requirements.txt
-          python manage.py collectstatic --noinput
-          python manage.py makemigrations --noinput
-          python manage.py migrate --noinput
+          python manage.py makemigrations --check --dry-run
+          python manage.py test
 
-      # Step 4: Set up SSH
-      - name: Set up SSH
+  deploy:
+    # Only main is deployed, and only after the tests pass.
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy to the VPS
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          SSH_HOST: ${{ secrets.VPS_HOST }}
+          SSH_USER: ${{ secrets.VPS_USER }}
+          SSH_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa.dpl_no_passphrase
-          chmod 600 ~/.ssh/id_rsa.dpl_no_passphrase
-          ssh-keyscan -p 1980 ftp.dpl.org.np >> ~/.ssh/known_hosts
-
-      # Step 5: Deploy with Git
-      - name: Git Pull on cPanel
-        run: |
-          ssh -i ~/.ssh/id_rsa.dpl_no_passphrase -p 1980 dplorgnp@ftp.dpl.org.np << 'EOF'
-          cd /home4/dplorgnp/public_html/dynamic_public_library/
-          git pull origin main
-          EOF
-
-      # Step 6: Restart the app by touching passenger_wsgi.py
-      - name: Restart Python app via Passenger (touch passenger_wsgi.py)
-        run: |
-          ssh -i ~/.ssh/id_rsa.dpl_no_passphrase -p 1980 dplorgnp@ftp.dpl.org.np << 'EOF'
-          touch /home4/dplorgnp/public_html/dpl/passenger_wsgi.py
-          EOF
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" "sudo -u dpl /srv/dpl/app/deploy/deploy.sh"

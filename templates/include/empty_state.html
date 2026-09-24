@@ -1,0 +1,6 @@
+<div class="col-span-full rounded-[var(--radius-card)] border border-dashed border-line bg-white/60 px-6 py-16 text-center">
+    <span class="mx-auto grid size-14 place-items-center rounded-2xl bg-paper-2 text-ink-900/50"><i data-lucide="{{ icon|default:'inbox' }}" class="size-6"></i></span>
+    <p class="mt-4 font-display text-xl font-semibold text-ink-900">{{ title }}</p>
+    {% if text %}<p class="mt-1 text-sm muted">{{ text }}</p>{% endif %}
+    {% if action_url %}<a href="{{ action_url }}" class="btn btn-primary mt-6">{{ action_label }}</a>{% endif %}
+</div>

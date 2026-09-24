@@ -1,148 +1,99 @@
 {% extends 'base.html' %}
-{% load static %}
+{% block seo %}{% if program.image %}{% include 'include/seo.html' with title=program.title description=program.description image=program.image.url type="article" %}{% else %}{% include 'include/seo.html' with title=program.title description=program.description type="article" %}{% endif %}{% endblock %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Event",
+  "name": "{{ program.title|escapejs }}",
+  "startDate": "{{ program.program_date|date:'Y-m-d' }}",
+  "eventStatus": "https://schema.org/EventScheduled",
+  "description": "{{ program.description|striptags|truncatechars:300|escapejs }}",
+  {% if program.image %}"image": "{{ request.scheme }}://{{ request.get_host }}{{ program.image.url }}",{% endif %}
+  "location": {"@type": "Place", "name": "{{ program.branch.name|escapejs }}", "address": "{{ program.branch.district|default:'Nepal'|escapejs }}"},
+  "organizer": {"@type": "Organization", "name": "Dynamic Public Library — {{ program.branch.name|escapejs }}"}
+}
+</script>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid bg-light py-3 mb-4">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-12 d-flex justify-content-start align-items-center">
-                <p class="mb-0 me-2">You are here:</p>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
-                        <li class="breadcrumb-item"><a href="{% url 'program_list' %}">Program List</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">{{ program.title }}</li>
-                    </ol>
-                </nav>
+<article>
+    <header class="bg-grain border-b border-line">
+        <div class="container-page pb-12 pt-10">
+            <nav aria-label="Breadcrumb" class="text-sm">
+                <ol class="flex flex-wrap items-center gap-1.5 muted">
+                    <li><a href="{% url 'home' %}" class="hover:text-ink-900">Home</a></li>
+                    <li aria-hidden="true">/</li>
+                    <li><a href="{% url 'program_list' %}" class="hover:text-ink-900">Programs</a></li>
+                    <li aria-hidden="true">/</li>
+                    <li class="line-clamp-1 font-medium text-ink-900" aria-current="page">{{ program.title }}</li>
+                </ol>
+            </nav>
+            <div class="reveal mt-8 max-w-4xl">
+                <a href="{{ program.branch.get_absolute_url }}" class="badge badge-ember hover:bg-ember-100">{{ program.branch.name }}</a>
+                <h1 class="display-xl mt-4 text-balance">{{ program.title }}</h1>
+                <dl class="mt-6 flex flex-wrap gap-x-8 gap-y-3 text-sm">
+                    <div class="flex items-center gap-2"><i data-lucide="calendar" class="size-4 text-ember-500"></i><dt class="sr-only">Date</dt><dd class="font-medium">{{ program.program_date|date:"l, j F Y" }}</dd></div>
+                    <div class="flex items-center gap-2"><i data-lucide="user-round" class="size-4 text-ember-500"></i><dt class="sr-only">Coordinator</dt><dd class="font-medium">Coordinated by {{ program.coordinator_name }}</dd></div>
+                </dl>
             </div>
         </div>
-    </div>
-</div>
+    </header>
 
+    <div class="container-page section pt-12">
+        <div class="grid gap-12 lg:grid-cols-3">
+            <div class="lg:col-span-2">
+                {% if program.image %}
+                    <img src="{{ program.image.url }}" alt="{{ program.title }}" class="aspect-[16/9] w-full rounded-[2rem] object-cover shadow-[var(--shadow-soft)]">
+                {% endif %}
+                <div class="prose-dpl mt-10 whitespace-pre-line">{{ program.description }}</div>
 
-<!-- Program Detail -->
-<section class="program-detail">
-    <div class="container">
-        <div class="row">
-            <!-- Program Main Image and Description (Left and Right layout) -->
-            <div class="col-lg-6">
-                <!-- Main Program Image -->
-                <img src="{{ program.image.url }}" alt="{{ program.name }}" class="img-fluid mb-4 program-image">
-            </div>
-
-            <div class="col-lg-6">
-                <!-- Program Details -->
-                <h1 class="display-4 program-title">{{ program.title }}</h1>
-                <p class="lead program-description">{{ program.description }}</p>
-                <p><strong>Program Date:</strong> {{ program.program_date }}</p>
-                <p><strong>Coordinator:</strong> {{ program.coordinator_name }}</p>
-
-                <!-- Post Date (Updated Date) -->
-                {% if program.updated_at %}
-                    <p><strong>Last Updated:</strong> {{ program.updated_at }}</p>
-                {% else %}
-                    <p><strong>Post Date:</strong> {{ program.program_date }}</p>
+                {% if sub_images %}
+                <section class="mt-14" x-data="{ open: null }">
+                    <h2 class="display-md">Photos from the program</h2>
+                    <div class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                        {% for photo in sub_images %}
+                            <figure>
+                                <button type="button" class="block w-full overflow-hidden rounded-2xl" @click="open = '{{ photo.image.url|escapejs }}'">
+                                    <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:program.title }}" loading="lazy" class="aspect-square w-full object-cover transition duration-500 hover:scale-105">
+                                </button>
+                                {% if photo.caption %}<figcaption class="mt-2 text-xs muted">{{ photo.caption }}</figcaption>{% endif %}
+                            </figure>
+                        {% endfor %}
+                    </div>
+                    <div x-show="open" x-cloak x-transition.opacity class="fixed inset-0 z-50 grid place-items-center bg-ink-950/90 p-4" @click="open = null" @keydown.escape.window="open = null">
+                        <img :src="open" alt="" class="max-h-[88vh] max-w-full rounded-2xl">
+                    </div>
+                </section>
                 {% endif %}
             </div>
-        </div>
 
-        <!-- Additional Program Images -->
-        <div class="row mt-5">
-            <div class="col-12">
-                <h3 class="related-programs-title">Program Gallary</h3>
-                <div class="row">
-                    {% for program_image in program.sub_images.all %}
-                        <div class="col-md-4">
-                            <div class="card related-program-card">
-                                <img src="{{ program_image.image.url }}" alt="{{ program_image.caption }}" class="card-img-top">
-                                <div class="card-body">
-                                    {% if program_image.caption %}
-                                        <p class="card-text">{{ program_image.caption }}</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    {% empty %}
-                        <p>No Gallery available.</p>
-                    {% endfor %}
+            <aside class="space-y-6">
+                <div class="card card-body">
+                    <p class="text-xs font-semibold uppercase tracking-wider muted">Organised by</p>
+                    <a href="{{ program.branch.get_absolute_url }}" class="mt-2 block font-display text-2xl font-semibold text-ink-900 hover:text-ember-600">{{ program.branch.name }}</a>
+                    {% if program.branch.district %}<p class="mt-1 text-sm muted">{{ program.branch.district }}{% if program.branch.province %}, {{ program.branch.get_province_display }}{% endif %}</p>{% endif %}
+                    <a href="{{ program.branch.get_absolute_url }}" class="btn btn-outline mt-5 w-full">Visit chapter</a>
                 </div>
-            </div>
-        </div>
-
-        <!-- Related Programs -->
-        <div class="row mt-5">
-    <div class="col-12">
-        <h3 class="related-programs-title">Related Programs</h3>
-        <div class="row">
-            {% for related_program in related_programs %}
-                <div class="col-md-4">
-                    <div class="card related-program-card">
-                        <a href="{% url 'program_detail' related_program.id %}">
-                            <img src="{{ related_program.image.url }}" alt="{{ related_program.name }}" class="card-img-top">
-                            <div class="card-body">
-                                <h5 class="card-title">{{ related_program.title }}</h5>
-                            </div>
-                        </a>
-                    </div>
+                <div class="panel">
+                    <p class="font-display text-xl font-semibold text-ink-900">Want to take part?</p>
+                    <p class="mt-2 text-sm muted">Programs are free and open to the community. Get in touch to join or volunteer at the next one.</p>
+                    <a href="{% url 'contact' %}" class="btn btn-primary mt-5 w-full">Contact us</a>
                 </div>
-            {% endfor %}
+            </aside>
         </div>
     </div>
-</div>
+</article>
+
+{% if related_programs %}
+<section class="border-t border-line bg-paper-2/60">
+    <div class="container-page section">
+        <h2 class="display-lg">More from {{ program.branch.name }}</h2>
+        <div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {% for program in related_programs|slice:":3" %}{% include 'programs/_program_card.html' %}{% endfor %}
+        </div>
     </div>
 </section>
-
-<style>
-    /* Styling for program title and description */
-    .program-title {
-        font-size: 2.5rem;
-        font-weight: bold;
-        margin-bottom: 20px;
-        color: #343a40;
-    }
-
-    .program-image {
-        max-width: 100%;
-        height: auto;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .program-description {
-        font-size: 1.1rem;
-        line-height: 1.6;
-        color: #555;
-    }
-
-    /* Styling for additional program images */
-    .related-programs-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin-bottom: 20px;
-    }
-
-    .related-program-card {
-        margin-bottom: 20px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        overflow: hidden;
-        transition: transform 0.3s ease;
-    }
-
-    .related-program-card:hover {
-        transform: scale(1.05);
-    }
-
-    .related-program-card .card-img-top {
-        height: 200px;
-        object-fit: cover;
-    }
-
-    .related-program-card .card-title {
-        font-size: 1.1rem;
-        font-weight: 500;
-        color: #333;
-    }
-
-</style>
+{% endif %}
 {% endblock %}

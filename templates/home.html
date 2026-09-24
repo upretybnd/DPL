@@ -1,8 +1,211 @@
 {% extends 'base.html' %}
 {% load static %}
+
 {% block content %}
-{% include 'include/carousel.html' %}
-{% include 'include/about_home.html' %}
-{% include 'include/counter.html' %}
-{% include 'include/feature.html' %}
+<!-- Hero -->
+<section class="relative overflow-hidden bg-grain">
+    <div class="container-page grid items-center gap-12 py-14 lg:grid-cols-12 lg:py-24">
+        <div class="reveal lg:col-span-6">
+            <p class="eyebrow">Community libraries · Since 2011</p>
+            <h1 class="display-xl mt-5 text-balance">
+                A library in every community, <em class="font-normal text-ember-600 not-italic sm:italic">a reader</em> in every home.
+            </h1>
+            <p class="lead mt-6 max-w-xl">
+                Dynamic Public Library is a volunteer-led network of {{ branch_count|default:"community" }} chapter{{ branch_count|pluralize }} across Nepal — open reading rooms,
+                youth programs and learning events that make knowledge free for everyone.
+            </p>
+            <div class="mt-8 flex flex-wrap gap-3">
+                <a href="{% url 'branch_details' %}" class="btn btn-primary btn-lg">Find a chapter <i data-lucide="arrow-right" class="size-4"></i></a>
+                <a href="{% url 'sign_up' %}" class="btn btn-outline btn-lg">Become a member</a>
+            </div>
+            <dl class="mt-10 flex flex-wrap gap-x-10 gap-y-4 text-sm">
+                <div><dt class="muted">Open daily</dt><dd class="font-semibold text-ink-900">6:00 AM – 8:00 PM</dd></div>
+                <div><dt class="muted">Membership</dt><dd class="font-semibold text-ink-900">Free for everyone</dd></div>
+                <div><dt class="muted">Head office</dt><dd class="font-semibold text-ink-900">Damak, Jhapa</dd></div>
+            </dl>
+        </div>
+
+        <div class="relative lg:col-span-6">
+            {% if carousel_items %}
+                <div x-data="{ i: 0, n: {{ carousel_items|length }} }" x-init="n > 1 && setInterval(() => i = (i + 1) % n, 6000)"
+                     class="relative aspect-[4/3] overflow-hidden rounded-[2rem] shadow-[var(--shadow-lift)]">
+                    {% for item in carousel_items %}
+                        <figure x-show="i === {{ forloop.counter0 }}" x-transition.opacity.duration.700ms {% if not forloop.first %}x-cloak{% endif %} class="absolute inset-0">
+                            <img src="{{ item.image.url }}" alt="{{ item.title }}" class="img-cover" {% if not forloop.first %}loading="lazy"{% endif %}>
+                            <figcaption class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink-950/80 to-transparent p-6 pt-16 text-white">
+                                <p class="font-display text-xl font-semibold">{{ item.title }}</p>
+                                <p class="text-sm text-white/75">Organised by {{ item.program_organized_by }}</p>
+                            </figcaption>
+                        </figure>
+                    {% endfor %}
+                    {% if carousel_items|length > 1 %}
+                    <div class="absolute right-5 top-5 flex gap-1.5">
+                        {% for item in carousel_items %}
+                            <button type="button" @click="i = {{ forloop.counter0 }}" :class="i === {{ forloop.counter0 }} ? 'w-6 bg-white' : 'w-2 bg-white/50'" class="h-2 rounded-full transition-all" aria-label="Show slide {{ forloop.counter }}"></button>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="grid grid-cols-5 gap-4">
+                    <img src="{% if media_items.hero_main %}{{ media_items.hero_main.image.url }}{% else %}{{ default_cover_url }}{% endif %}"
+                         alt="{{ media_items.hero_main.alt_text|default:'Members of Dynamic Public Library' }}" class="col-span-3 aspect-[3/4] rounded-[2rem] object-cover shadow-[var(--shadow-lift)]">
+                    <div class="col-span-2 flex flex-col gap-4 pt-12">
+                        <img src="{% if media_items.hero_side %}{{ media_items.hero_side.image.url }}{% else %}{% static 'img/dpl 2.jpg' %}{% endif %}"
+                             alt="{{ media_items.hero_side.alt_text|default:'DPL community event' }}" class="aspect-square rounded-[1.5rem] object-cover shadow-[var(--shadow-soft)]">
+                        <div class="rounded-[1.5rem] bg-ink-900 p-5 text-white">
+                            <p class="stat !text-white">{{ years_active }}</p>
+                            <p class="text-sm text-white/70">years of opening doors to reading</p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Stats -->
+<section class="border-y border-line bg-white">
+    <div class="container-page grid grid-cols-2 divide-line py-10 lg:grid-cols-4 lg:divide-x">
+        <div class="p-4 text-center"><p class="stat">{{ years_active }}</p><p class="muted mt-1 text-sm">Years of service</p></div>
+        <div class="p-4 text-center"><p class="stat">{{ branch_count }}</p><p class="muted mt-1 text-sm">Chapters across Nepal</p></div>
+        <div class="p-4 text-center"><p class="stat">{{ program_count }}</p><p class="muted mt-1 text-sm">Programs organised</p></div>
+        <div class="p-4 text-center"><p class="stat">{% if people_reached %}{{ people_reached }}{% else %}2k+{% endif %}</p><p class="muted mt-1 text-sm">{% if people_reached %}People reached (reported){% else %}Readers served{% endif %}</p></div>
+    </div>
+</section>
+
+<!-- About -->
+<section class="section">
+    <div class="container-page grid items-center gap-14 lg:grid-cols-2">
+        <div class="relative order-last lg:order-first" x-data="{ play: false }">
+            <div class="relative aspect-[4/3] overflow-hidden rounded-[2rem] shadow-[var(--shadow-lift)]">
+                <template x-if="play">
+                    <iframe class="absolute inset-0 size-full" src="https://www.youtube-nocookie.com/embed/ly5FhwmM4jo?autoplay=1&rel=0" title="Dynamic Public Library in action" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+                </template>
+                <img x-show="!play" src="{% if media_items.video_cover %}{{ media_items.video_cover.image.url }}{% else %}{{ default_cover_url }}{% endif %}"
+                     alt="{{ media_items.video_cover.alt_text|default:'Dynamic Public Library community' }}" class="img-cover" loading="lazy">
+                <button x-show="!play" type="button" @click="play = true" class="absolute inset-0 grid place-items-center bg-ink-950/10 transition hover:bg-ink-950/25" aria-label="Play video about DPL">
+                    <span class="grid size-20 place-items-center rounded-full bg-white text-ember-600 shadow-[var(--shadow-lift)] ring-8 ring-white/30">
+                        <i data-lucide="play" class="size-8 fill-current"></i>
+                    </span>
+                </button>
+            </div>
+        </div>
+        <div>
+            <p class="eyebrow">About DPL</p>
+            <h2 class="display-lg mt-4 text-balance">Empowering minds through knowledge</h2>
+            <p class="lead mt-5">
+                We provide access to books, learning tools and self-development programs, fostering a love for reading and education.
+                From leisure reading to hands-on workshops, every chapter is a space where people of all ages learn and grow together.
+            </p>
+            <ul class="mt-8 grid gap-4 sm:grid-cols-2">
+                <li class="flex gap-3"><span class="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-ember-50 text-ember-600"><i data-lucide="book-open" class="size-4"></i></span><span><b class="block text-ink-900">Vast collection</b><span class="text-sm muted">Books, journals and digital resources for every age.</span></span></li>
+                <li class="flex gap-3"><span class="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-ember-50 text-ember-600"><i data-lucide="laptop" class="size-4"></i></span><span><b class="block text-ink-900">Digital literacy</b><span class="text-sm muted">Essential digital skills for the modern world.</span></span></li>
+                <li class="flex gap-3"><span class="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-ember-50 text-ember-600"><i data-lucide="users" class="size-4"></i></span><span><b class="block text-ink-900">Community first</b><span class="text-sm muted">Workshops, seminars and cultural events.</span></span></li>
+                <li class="flex gap-3"><span class="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-ember-50 text-ember-600"><i data-lucide="sunrise" class="size-4"></i></span><span><b class="block text-ink-900">Open every day</b><span class="text-sm muted">6:00 AM to 8:00 PM, all week.</span></span></li>
+            </ul>
+            <a href="{% url 'about' %}" class="btn btn-dark mt-10">Our story <i data-lucide="arrow-right" class="size-4"></i></a>
+        </div>
+    </div>
+</section>
+
+<!-- Chapters -->
+{% if featured_chapters %}
+<section class="section bg-paper-2/60">
+    <div class="container-page">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+                <p class="eyebrow">Our chapters</p>
+                <h2 class="display-lg mt-4">One network, many communities</h2>
+            </div>
+            <a href="{% url 'branch_details' %}" class="btn btn-outline">All chapters <i data-lucide="arrow-right" class="size-4"></i></a>
+        </div>
+        <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {% for chapter in featured_chapters %}
+                {% include 'branches/_chapter_card.html' %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Programs -->
+{% if latest_programs %}
+<section class="section">
+    <div class="container-page">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+                <p class="eyebrow">Latest programs</p>
+                <h2 class="display-lg mt-4">What's happening at DPL</h2>
+            </div>
+            <a href="{% url 'program_list' %}" class="btn btn-outline">All programs <i data-lucide="arrow-right" class="size-4"></i></a>
+        </div>
+        <div class="mt-10 grid gap-6 md:grid-cols-3">
+            {% for program in latest_programs %}
+                {% include 'programs/_program_card.html' %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Impact + Forum -->
+{% if latest_projects or latest_threads %}
+<section class="section {% if latest_programs %}pt-0{% endif %}">
+    <div class="container-page grid gap-8 lg:grid-cols-2">
+        {% if latest_projects %}
+        <div class="card card-body">
+            <div class="flex items-center justify-between">
+                <h2 class="display-md">Impact reports</h2>
+                <a href="{% url 'public_project_list' %}" class="text-sm font-semibold text-ember-600 hover:text-ember-700">View all</a>
+            </div>
+            <ul class="mt-6 divide-y divide-line">
+                {% for project in latest_projects %}
+                <li class="py-4">
+                    <a href="{% url 'public_project_detail' project.id %}" class="group block">
+                        <p class="text-xs muted">{{ project.branch.name }} · {{ project.event_date|date:"M Y" }}</p>
+                        <p class="mt-1 font-semibold text-ink-900 group-hover:text-ember-600">{{ project.title }}</p>
+                        <p class="mt-1 text-sm muted">{{ project.beneficiaries_count }} people reached · {{ project.volunteer_hours }} volunteer hours</p>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        {% if latest_threads %}
+        <div class="card card-body">
+            <div class="flex items-center justify-between">
+                <h2 class="display-md">From the forum</h2>
+                <a href="{% url 'category_list' %}" class="text-sm font-semibold text-ember-600 hover:text-ember-700">Join the discussion</a>
+            </div>
+            <ul class="mt-6 divide-y divide-line">
+                {% for thread in latest_threads %}
+                <li class="py-4">
+                    <a href="{{ thread.get_absolute_url }}" class="group block">
+                        <p class="text-xs muted">{{ thread.category.name }} · {{ thread.created_at|timesince }} ago</p>
+                        <p class="mt-1 font-semibold text-ink-900 group-hover:text-ember-600">{{ thread.title }}</p>
+                        <p class="mt-1 text-sm muted">by {{ thread.author.username }} · {{ thread.reply_count }} repl{{ thread.reply_count|pluralize:"y,ies" }}</p>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Call to action -->
+<section class="container-page">
+    <div class="relative overflow-hidden rounded-[2rem] bg-ink-900 px-6 py-14 text-center sm:px-16">
+        <div class="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-ember-500/25 blur-3xl"></div>
+        <div class="pointer-events-none absolute -bottom-24 -left-24 size-72 rounded-full bg-ink-400/25 blur-3xl"></div>
+        <h2 class="display-lg relative mx-auto max-w-2xl !text-white text-balance">Help put a book in every hand</h2>
+        <p class="relative mx-auto mt-4 max-w-xl text-white/70">Volunteer at your local chapter, start a reading circle, or support a library with a donation.</p>
+        <div class="relative mt-8 flex flex-wrap justify-center gap-3">
+            <a href="{% url 'donate_us' %}" class="btn btn-primary btn-lg"><i data-lucide="heart" class="size-4"></i> Donate</a>
+            <a href="{% url 'contact' %}" class="btn btn-light btn-lg">Volunteer with us</a>
+        </div>
+    </div>
+</section>
 {% endblock %}

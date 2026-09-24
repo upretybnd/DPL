@@ -1,72 +1,52 @@
 {% extends 'base.html' %}
+{% block seo %}{% include 'include/seo.html' with title="Impact reports" description="Transparent, verified reports of Dynamic Public Library projects — who we reached, volunteer hours and outcomes from every chapter." %}{% endblock %}
+
 {% block content %}
-<div class="container-xxl py-5 reports-shell">
-    <div class="container">
-        <div class="mb-4">
-            <p class="text-uppercase text-primary mb-1">Public Transparency</p>
-            <h2 class="mb-0">Published Project Reports</h2>
-        </div>
-        <form method="get" class="report-filter mb-4">
-            <div class="row g-2">
-                <div class="col-md-3"><input class="form-control" type="text" name="q" value="{{ q }}" placeholder="Search title/type/summary"></div>
-                <div class="col-md-2">
-                    <select class="form-select" name="branch">
-                        <option value="">All branches</option>
-                        {% for item in public_branches %}
-                        <option value="{{ item.branch_id }}" {% if branch == item.branch_id|stringformat:"s" %}selected{% endif %}>{{ item.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select class="form-select" name="year">
-                        <option value="">All years</option>
-                        {% for item in available_years %}
-                        <option value="{{ item.year }}" {% if year == item.year|stringformat:"s" %}selected{% endif %}>{{ item.year }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select class="form-select" name="month">
-                        <option value="">All months</option>
-                        {% for m in month_choices %}
-                        <option value="{{ m }}" {% if month == m|stringformat:"s" %}selected{% endif %}>{{ m }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-2"><input class="form-control" type="text" name="sdg" value="{{ sdg }}" placeholder="SDG tag"></div>
-                <div class="col-md-1"><button class="btn btn-primary w-100" type="submit">Go</button></div>
-            </div>
-        </form>
-        <div class="row g-3">
-            {% for project in projects %}
-                <div class="col-md-6 col-xl-4">
-                    <div class="report-card h-100">
-                        <small class="text-secondary">{{ project.branch.name }}</small>
-                        <h5 class="mt-2">{{ project.title }}</h5>
-                        <p class="mb-2">{{ project.project_type }} | {{ project.event_date }}</p>
-                        <span class="status-badge status-{{ project.status }}">{{ project.get_status_display }}</span>
-                        <div class="mt-3">
-                            <a href="{% url 'public_project_detail' project.id %}">Open public report</a>
-                        </div>
-                    </div>
-                </div>
-            {% empty %}
-                <p>No published projects yet.</p>
-            {% endfor %}
-        </div>
-        {% if projects.paginator.num_pages > 1 %}
-        <nav class="mt-4">
-            <ul class="pagination">
-                {% if projects.has_previous %}
-                    <li class="page-item"><a class="page-link" href="?page={{ projects.previous_page_number }}&q={{ q }}&branch={{ branch }}&year={{ year }}&month={{ month }}&sdg={{ sdg }}">Previous</a></li>
-                {% endif %}
-                <li class="page-item disabled"><span class="page-link">Page {{ projects.number }} of {{ projects.paginator.num_pages }}</span></li>
-                {% if projects.has_next %}
-                    <li class="page-item"><a class="page-link" href="?page={{ projects.next_page_number }}&q={{ q }}&branch={{ branch }}&year={{ year }}&month={{ month }}&sdg={{ sdg }}">Next</a></li>
-                {% endif %}
-            </ul>
-        </nav>
-        {% endif %}
+{% include 'include/page_header.html' with eyebrow="Transparency" title="Our impact, reported openly" lead="Every project below was reported by a chapter and approved by the national team. Explore what we did, who it reached and what we learned." crumb="Impact reports" %}
+
+<section class="container-page relative z-10 -mt-8">
+    <dl class="grid grid-cols-3 gap-4">
+        <div class="card p-5 text-center"><dt class="text-xs muted">Published projects</dt><dd class="stat mt-1 !text-3xl">{{ summary.count|default:0 }}</dd></div>
+        <div class="card p-5 text-center"><dt class="text-xs muted">People reached</dt><dd class="stat mt-1 !text-3xl">{{ summary.people|default:0 }}</dd></div>
+        <div class="card p-5 text-center"><dt class="text-xs muted">Volunteer hours</dt><dd class="stat mt-1 !text-3xl">{{ summary.hours|default:0 }}</dd></div>
+    </dl>
+</section>
+
+<section class="container-page section pt-10">
+    <form method="get" class="card grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_.8fr_.9fr_.8fr_auto]" role="search">
+        <label class="relative"><span class="sr-only">Search</span>
+            <i data-lucide="search" class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-ink-900/40"></i>
+            <input class="input pl-11" type="search" name="q" value="{{ q }}" placeholder="Search projects">
+        </label>
+        <label><span class="sr-only">Chapter</span>
+            <select class="input" name="branch">
+                <option value="">All chapters</option>
+                {% for item in public_branches %}<option value="{{ item.branch_id }}" {% if branch == item.branch_id|stringformat:"s" %}selected{% endif %}>{{ item.name }}</option>{% endfor %}
+            </select>
+        </label>
+        <label><span class="sr-only">Year</span>
+            <select class="input" name="year">
+                <option value="">Any year</option>
+                {% for item in available_years %}<option value="{{ item.year }}" {% if year == item.year|stringformat:"s" %}selected{% endif %}>{{ item.year }}</option>{% endfor %}
+            </select>
+        </label>
+        <label><span class="sr-only">Month</span>
+            <select class="input" name="month">
+                <option value="">Any month</option>
+                {% for num, name in month_choices %}<option value="{{ num }}" {% if month == num|stringformat:"s" %}selected{% endif %}>{{ name }}</option>{% endfor %}
+            </select>
+        </label>
+        <label><span class="sr-only">SDG</span><input class="input" type="text" name="sdg" value="{{ sdg }}" placeholder="SDG, e.g. SDG 4"></label>
+        <button class="btn btn-dark" type="submit">Filter</button>
+    </form>
+
+    <div class="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {% for project in projects %}
+            {% include 'reports/_public_project_card.html' with show_branch=True %}
+        {% empty %}
+            {% include 'include/empty_state.html' with icon="file-search" title="No published reports match" text="Try clearing some filters." %}
+        {% endfor %}
     </div>
-</div>
+    {% include 'include/pagination.html' with page=projects query=filter_query %}
+</section>
 {% endblock %}

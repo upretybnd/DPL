@@ -27,3 +27,14 @@ staticfiles
 static
 media
 
+
+# Local environments and editor files
+env_dpl/
+.venv/
+.idea/
+
+# Frontend build tooling
+node_modules/
+
+# Local credentials (never commit)
+credentials.md

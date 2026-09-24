@@ -1,5 +1,7 @@
 from django.db import models
 
+from dpl.storage import private_storage
+
 class ElectionCandidate(models.Model):
     POSITION_CHOICES = [
         ('President', 'President'),
@@ -17,9 +19,9 @@ class ElectionCandidate(models.Model):
     date_of_birth = models.DateField()  # New field for DOB
     position = models.CharField(max_length=50, choices=POSITION_CHOICES, default='choose')
     past_position = models.TextField()  # Fixed field name
-    profile_picture = models.ImageField(upload_to='candidate_profiles/', blank=True, null=True)
-    citizenship_document = models.FileField(upload_to='citizenship_documents/', blank=False, null=False)
-    payment_screenshot = models.ImageField(upload_to='payment_screenshots/', blank=False, null=False)
+    profile_picture = models.ImageField(upload_to='candidate_profiles/', storage=private_storage, blank=True, null=True)
+    citizenship_document = models.FileField(upload_to='citizenship_documents/', storage=private_storage, blank=False, null=False)
+    payment_screenshot = models.ImageField(upload_to='payment_screenshots/', storage=private_storage, blank=False, null=False)
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

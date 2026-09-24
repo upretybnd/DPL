@@ -1,360 +1,102 @@
-
 {% extends 'base.html' %}
 {% load static %}
+{% block seo %}{% include 'include/seo.html' with title=thread.title description=thread.content type="article" %}{% endblock %}
 
 {% block content %}
+<section class="bg-grain border-b border-line">
+    <div class="container-page max-w-4xl pb-10 pt-10">
+        <nav aria-label="Breadcrumb" class="text-sm muted">
+            <a href="{% url 'category_list' %}" class="hover:text-ink-900">Forum</a> /
+            <a href="{% url 'category_threads' category_id=thread.category.id %}" class="hover:text-ink-900">{{ thread.category.name }}</a>
+        </nav>
+        <h1 class="display-lg mt-6 text-balance">{{ thread.title }}</h1>
+        <p class="mt-3 text-sm muted">{{ thread.views }} view{{ thread.views|pluralize }} · {{ replies.paginator.count }} repl{{ replies.paginator.count|pluralize:"y,ies" }} · started {{ thread.created_at|date:"j M Y" }}</p>
+    </div>
+</section>
 
-<!-- Breadcrumbs -->
-<nav aria-label="breadcrumb">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="/">Home</a></li>
-    <li class="breadcrumb-item"><a href="{% url 'category_list' %}">Discussion</a></li>
-    <li class="breadcrumb-item"><a href="{% url 'category_threads' category_id=thread.category.id %}">{{ thread.category.name }}</a></li>
-    <li class="breadcrumb-item active" aria-current="page">{{ thread.title }}</li>
-  </ol>
-</nav>
-
-<!-- Display main post only on the first page -->
-{% if replies.has_previous == False %}
-<div class="card mb-4">
-    <h4 class="card-title" align="center">{{ thread.title }}</h4>
-    <div class="card-body" style="display: flex;">
-        <!-- Author Profile Card (Left Column) -->
-        <div style="flex: 0 0 30%; padding-right: 5px; background-color: #f7f7f7; border-radius: 8px; padding: 10px; border: 1px solid #ccc;">
-            <h5 class="card-title" style="text-align:center;">Author</h5>
-            <div style="text-align: center;">
-                <p>
-                    <img src="{% if user.profile.profile_picture %}{{ user.profile.profile_picture.url }}{% else %}/static/images/default-avatar.png{% endif %}"
-                         alt="Profile Picture" class="profile-avatar mb-2"
-                         style="width: 70px; height: 70px; object-fit: cover; border-radius: 50%;"/>
-                </p>
-                <p style="margin-bottom: 3px;"><strong>{{ thread.author.profile.custom_title|safe }}</strong></p>
-                <p style="margin-bottom: 3px;">{{ thread.author.profile.full_name }}</p>
-                <p style="margin-bottom: 3px;"><strong>@</strong> {{ thread.author.username }}</p>
-            </div>
-        </div>
-        <!-- Thread Content Card (Right Column) -->
-        <div style="flex: 1; padding-left: 20px; border: 1px solid #ccc; border-radius: 8px; padding: 15px;">
-            <p class="text-muted">Posted on: {{ thread.created_at }}</p>
-
-            <!-- Content Box with edit indicator -->
-            <div class="content-box" style="border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; padding: 15px;">
-                <p id="thread-content">{{ thread.content }}</p>
-            </div>
-            {% if thread.updated_at != thread.created_at %}
-                <p class="text-muted small">Last edited on: {{ thread.updated_at|date:"F j, Y, g:i a" }}</p>
-            {% endif %}
-
-            <!-- Like for the thread -->
-            <div class="d-flex align-items-center mb-2">
-                <a href="#" class="like-thread" data-thread-id="{{ thread.id }}">
-                    {% if request.user in thread.likes.all %}
-                        👍
-                    {% else %}
-                        👍
-                    {% endif %}
-                </a>
-                <span class="ms-2">{{ thread.total_likes }}</span>
-
-                <!-- Edit Button for the Thread (Visible only for the author) -->
-                {% if thread.author == request.user %}
-                <a href="#edit" onclick="toggleEditThread()" class="ms-3">🖊️ Edit Thread</a>
-                {% endif %}
-
-                <!-- Reply button for the thread -->
-                <a href="#reply-box" class="reply-thread ms-3">💬 Reply</a>
-            </div>
-
-            <!-- Edit Form (Visible only if the thread author is logged in) -->
+<section class="container-page max-w-4xl py-10">
+    <!-- Original post -->
+    <article class="card overflow-hidden" x-data="post({ url: '{% url 'edit_thread' thread.id %}', likeUrl: '{% url 'like_thread' thread.id %}', liked: {{ thread_liked|yesno:'true,false' }}, likes: {{ thread.total_likes }} })">
+        {% include 'discussion/_post_header.html' with author=thread.author created=thread.created_at updated=thread.updated_at op=True %}
+        <div class="card-body pt-2">
+            <div x-show="!editing" x-ref="content" class="whitespace-pre-line text-[16px] leading-relaxed text-ink-900/90">{{ thread.content }}</div>
             {% if thread.author == request.user %}
-            <div id="edit-thread-form" style="display: none;">
-                <form method="POST" id="edit-thread-form-content">
-                    {% csrf_token %}
-                    <textarea name="content" id="edit-thread-content" rows="4" class="form-control">{{ thread.content }}</textarea>
-                    <button type="submit" class="btn btn-primary mt-2">Update</button>
-                </form>
-            </div>
+            <form x-show="editing" x-cloak @submit.prevent="save" class="space-y-3">
+                <textarea x-ref="editor" class="input min-h-40">{{ thread.content }}</textarea>
+                <div class="flex gap-2"><button type="submit" class="btn btn-primary btn-sm">Save</button><button type="button" class="btn btn-ghost btn-sm" @click="editing = false">Cancel</button></div>
+            </form>
             {% endif %}
+            {% include 'discussion/_post_actions.html' with owner=thread.author %}
         </div>
-    </div>
-</div>
-{% endif %}
+    </article>
 
-<!-- Replies Section -->
-<div id="replies-section">
-    <h3>Replies</h3>
-
-    {% for reply in replies %}
-    <div class="card mb-3">
-        <div class="card-body" style="display: flex;">
-            <!-- Reply Author Profile (Left Column) -->
-            <div style="flex: 0 0 30%; padding-right: 5px; background-color: #f7f7f7; border-radius: 8px; padding: 10px; border: 1px solid #ccc;">
-                <div style="text-align: center;">
-                    <p>
-                        <img src="{% if reply.author.profile.profile_picture %}{{ reply.author.profile.profile_picture.url }}{% else %}/static/images/default-avatar.png{% endif %}"
-                             alt="Profile Picture" class="profile-avatar mb-2"
-                             style="width: 70px; height: 70px; object-fit: cover; border-radius: 50%;"/>
-                    </p>
-                    <p style="margin-bottom: 3px;"><strong>{{ reply.author.profile.custom_title|safe }}</strong></p>
-                    <p style="margin-bottom: 3px;">{{ reply.author.profile.full_name }}</p>
-                    <p style="margin-bottom: 3px;"><strong>@</strong> {{ reply.author.username }}</p>
-                </div>
-            </div>
-
-            <!-- Reply Content (Right Column) -->
-            <div style="flex: 1; padding-left: 20px; border: 1px solid #ccc; border-radius: 8px; padding: 15px;">
-                <p style="font-size: 0.85rem; color: #666;">
-                    <small>Posted on {{ reply.created_at|date:"F j, Y, g:i a" }}</small>
-                </p>
-                <div class="content-box" style="border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; padding: 15px;">
-                    <p id="reply-content-{{ reply.id }}">{{ reply.content }}</p>
-                </div>
-                {% if reply.updated_at != reply.created_at %}
-                        <br><small class="text-muted">Last edited on {{ reply.updated_at|date:"F j, Y, g:i a" }}</small>
-                    {% endif %}
-
-                <!-- Like for the reply -->
-                <div class="d-flex align-items-center mb-2">
-                    <a href="#" class="like-reply" data-reply-id="{{ reply.id }}">
-                        {% if request.user in reply.likes.all %}
-                            👍 Unlike
-                        {% else %}
-                            👍 Like
-                        {% endif %}
-                    </a>
-                    <span class="ms-2">{{ reply.total_likes }}</span>
-
-                <!-- Edit Button for the Reply (Visible only for the author) -->
+    <!-- Replies -->
+    <h2 class="display-md mt-12">Replies</h2>
+    <div class="mt-6 space-y-4">
+        {% for reply in replies %}
+        <article id="reply-{{ reply.id }}" class="card overflow-hidden" x-data="post({ url: '{% url 'edit_reply' reply.id %}', likeUrl: '{% url 'like_reply' reply.id %}', liked: {% if reply.id in liked_reply_ids %}true{% else %}false{% endif %}, likes: {{ reply.likes.all|length }} })">
+            {% include 'discussion/_post_header.html' with author=reply.author created=reply.created_at updated=reply.updated_at %}
+            <div class="card-body pt-2">
+                <div x-show="!editing" x-ref="content" class="whitespace-pre-line leading-relaxed text-ink-900/90">{{ reply.content }}</div>
                 {% if reply.author == request.user %}
-                <button class="edit-button btn btn-link" onclick="toggleEditReply({{ reply.id }})">🖊️ Edit Reply</button>
-                <div id="edit-reply-form-{{ reply.id }}" style="display: none;">
-                    <form method="POST" id="edit-reply-form-content-{{ reply.id }}" class="edit-reply-form" data-reply-id="{{ reply.id }}">
-                        {% csrf_token %}
-                        <textarea name="content" id="edit-reply-content-{{ reply.id }}" rows="4" class="form-control">{{ reply.content }}</textarea>
-                        <button type="submit" class="btn btn-primary mt-2">Update</button>
-                    </form>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    {% empty %}
-    <p>No replies yet. Be the first to reply!</p>
-    {% endfor %}
-</div>
-
-<div class="row">
-    <!-- Forum Posting Guidelines (Left Column) -->
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Forum Posting Guidelines</h5>
-                <ul>
-                    <li>Be respectful to others.</li>
-                    <li>Avoid spamming.</li>
-                    <li>Stay on topic.</li>
-                    <li>No offensive language.</li>
-                    <li>Follow the forum rules.</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <!-- Reply Section (Right Column) -->
-    <div class="col-md-6">
-        <div id="reply-box" class="card mt-4">
-            <div class="card-body">
-                <form method="POST">
-                    {% csrf_token %}
-                    <textarea name="content" rows="4" placeholder="Post a reply to the thread..." class="form-control"></textarea>
-                    <button type="submit" name="reply_thread" class="btn btn-primary mt-2">Reply</button>
+                <form x-show="editing" x-cloak @submit.prevent="save" class="space-y-3">
+                    <textarea x-ref="editor" class="input">{{ reply.content }}</textarea>
+                    <div class="flex gap-2"><button type="submit" class="btn btn-primary btn-sm">Save</button><button type="button" class="btn btn-ghost btn-sm" @click="editing = false">Cancel</button></div>
                 </form>
+                {% endif %}
+                {% include 'discussion/_post_actions.html' with owner=reply.author %}
             </div>
-        </div>
+        </article>
+        {% empty %}
+            <p class="panel text-center muted">No replies yet — be the first to share your thoughts.</p>
+        {% endfor %}
     </div>
-</div>
+    {% include 'include/pagination.html' with page=replies %}
 
-
-<!-- Pagination Controls at the Bottom (Right) -->
-<div class="pagination center-pagination d-flex justify-content-center">
-    <span class="page-links">
-        {% if replies.has_previous %}
-            <a href="?page=1">&laquo; First</a>
-            <a href="?page={{ replies.previous_page_number }}">Previous</a>
+    <!-- Reply box -->
+    <div id="reply-box" class="card card-body mt-10">
+        {% if user.is_authenticated %}
+            <form method="post" action="{{ thread.get_absolute_url }}">
+                {% csrf_token %}
+                <label for="reply-content" class="display-md block">Add your reply</label>
+                <textarea id="reply-content" name="content" required class="input mt-4 min-h-32" placeholder="Share your thoughts… Be kind, stay on topic."></textarea>
+                <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+                    <p class="text-xs muted">Be respectful · No spam · Stay on topic</p>
+                    <button type="submit" name="reply_thread" value="1" class="btn btn-primary"><i data-lucide="send" class="size-4"></i> Post reply</button>
+                </div>
+            </form>
+        {% else %}
+            <div class="flex flex-col items-center gap-4 py-4 text-center sm:flex-row sm:text-left">
+                <span class="grid size-12 place-items-center rounded-2xl bg-ember-50 text-ember-600"><i data-lucide="message-circle" class="size-6"></i></span>
+                <p class="flex-1"><b class="text-ink-900">Join the conversation.</b> <span class="muted">Log in or create a free account to reply.</span></p>
+                <a href="{% url 'login' %}?next={{ request.path|urlencode }}" class="btn btn-dark">Log in to reply</a>
+            </div>
         {% endif %}
+    </div>
+</section>
+{% endblock %}
 
-        <span class="current-page">Page {{ replies.number }} of {{ replies.paginator.num_pages }}</span>
-
-        {% if replies.has_next %}
-            <a href="?page={{ replies.next_page_number }}">Next</a>
-            <a href="?page={{ replies.paginator.num_pages }}">Last &raquo;</a>
-        {% endif %}
-    </span>
-</div>
-
-<style>
-    .inline-elements {
-        display: flex;
-        gap: 10px; /* Adds spacing between elements */
-        align-items: center; /* Vertically aligns elements */
-    }
-
-    .inline-elements a,
-    .inline-elements button,
-    .inline-elements span {
-        margin: 0; /* Removes unnecessary margins for buttons and links */
-        padding: 0 5px; /* Optional: Adjust padding for better alignment */
-    }
-
-    /* Add custom styling for the replies section */
-    #replies-section {
-        margin-top: 20px;
-        padding-top: 10px;
-        border-top: 1px solid #ccc;
-    }
-
-    /* Reply Container Layout (similar to main post) */
-    .reply-container {
-        display: flex;
-        margin-bottom: 20px;
-        border-bottom: 1px solid #ccc;
-        padding-bottom: 10px;
-    }
-
-    /* Reply Author Profile */
-    .reply-author-profile {
-        padding-right: 20px;
-        flex: 0 0 30%;
-    }
-
-    /* Reply Content */
-    .reply-content {
-        flex: 1;
-    }
-</style>
-
+{% block extra_js %}
 <script>
-    // Function to handle the like for thread
-    document.querySelectorAll('.like-thread').forEach(button => {
-        button.addEventListener('click', function(event) {
-            event.preventDefault();
-
-            const threadId = this.getAttribute('data-thread-id');
-            const url = `/discussion/like_thread/${threadId}/`;
-
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const likeText = data.liked ? '👍 Unlike' : '👍 Like';
-                    this.textContent = likeText;
-                    this.nextElementSibling.textContent = `${data.total_likes} likes`; // Update the like count
-                }
-            });
-        });
-    });
-
-    // Function to handle the like for reply
-    document.querySelectorAll('.like-reply').forEach(button => {
-        button.addEventListener('click', function(event) {
-            event.preventDefault();
-
-            const replyId = this.getAttribute('data-reply-id');
-            const url = `/discussion/like_reply/${replyId}/`;
-
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const likeText = data.liked ? '👍 Unlike' : '👍 Like';
-                    this.textContent = likeText;
-                    this.nextElementSibling.textContent = `${data.total_likes} likes`; // Update the like count
-                }
-            });
-        });
-    });
-
-    // Function to toggle the thread edit form
-    function toggleEditThread() {
-        const form = document.getElementById('edit-thread-form');
-        form.style.display = form.style.display === 'none' ? 'block' : 'none';
-    }
-
-    // Function to toggle the reply edit form
-    function toggleEditReply(replyId) {
-        const form = document.getElementById('edit-reply-form-' + replyId);
-        form.style.display = form.style.display === 'none' ? 'block' : 'none';
-    }
-
-    // Function to handle the thread edit submission
-    document.getElementById('edit-thread-form-content')?.addEventListener('submit', function(event) {
-        event.preventDefault();
-
-        const content = document.getElementById('edit-thread-content').value.trim();
-        if (!content) {
-            return;  // Simply return if content is empty
-        }
-
-        const threadId = {{ thread.id }};
-
-        fetch(`/discussion/edit_thread/${threadId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+    // Shared Alpine component for liking and inline-editing a thread or reply.
+    function post({ url, likeUrl, liked, likes }) {
+        const csrf = '{{ csrf_token }}';
+        return {
+            editing: false, liked, likes, error: '',
+            async like() {
+                {% if not user.is_authenticated %}window.location = '{% url 'login' %}?next={{ request.path|urlencode }}'; return;{% endif %}
+                const res = await fetch(likeUrl, { method: 'POST', headers: { 'X-CSRFToken': csrf } });
+                if (res.ok) { const data = await res.json(); this.liked = data.liked; this.likes = data.total_likes; }
             },
-            body: JSON.stringify({ content: content }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                document.getElementById('thread-content').textContent = content; // Update thread content
-                document.getElementById('edit-thread-form').style.display = 'none'; // Close form after update
-            }
-        });
-    });
-
-    // Function to handle the reply edit submission
-    document.querySelectorAll('.edit-reply-form').forEach(form => {
-        form.addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            const replyId = this.getAttribute('data-reply-id');
-            const content = document.getElementById('edit-reply-content-' + replyId).value.trim();
-
-            if (!content) {
-                return;  // Simply return if content is empty
-            }
-
-            fetch(`/discussion/edit_reply/${replyId}/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                },
-                body: JSON.stringify({ content: content }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('reply-content-' + replyId).textContent = content; // Update reply content
-                    document.getElementById('edit-reply-form-' + replyId).style.display = 'none'; // Close form after update
-                }
-            });
-        });
-    });
-    function toggleEditThread() {
-        const form = document.getElementById('edit-thread-form');
-        form.style.display = (form.style.display === 'none') ? 'block' : 'none';
+            async save() {
+                const content = this.$refs.editor.value.trim();
+                if (!content) return;
+                const res = await fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrf, 'Content-Type': 'application/json' }, body: JSON.stringify({ content }) });
+                const data = await res.json();
+                if (data.success) { this.$refs.content.textContent = data.new_content; this.editing = false; }
+                else { alert(data.message || 'Could not save.'); }
+            },
+        };
     }
 </script>
-
 {% endblock %}

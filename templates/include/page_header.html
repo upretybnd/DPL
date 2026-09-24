@@ -1,0 +1,17 @@
+{% comment %}Shared page intro. Args: eyebrow, title, lead, crumb, parent_url, parent_label{% endcomment %}
+<section class="bg-grain border-b border-line">
+    <div class="container-page pb-20 pt-10 sm:pt-14">
+        <nav aria-label="Breadcrumb" class="text-sm">
+            <ol class="flex flex-wrap items-center gap-1.5 muted">
+                <li><a href="{% url 'home' %}" class="hover:text-ink-900">Home</a></li>
+                {% if parent_url %}<li aria-hidden="true">/</li><li><a href="{{ parent_url }}" class="hover:text-ink-900">{{ parent_label }}</a></li>{% endif %}
+                {% if crumb %}<li aria-hidden="true">/</li><li class="font-medium text-ink-900" aria-current="page">{{ crumb }}</li>{% endif %}
+            </ol>
+        </nav>
+        <div class="reveal mt-8 max-w-3xl">
+            {% if eyebrow %}<p class="eyebrow">{{ eyebrow }}</p>{% endif %}
+            <h1 class="display-xl mt-4 text-balance">{{ title }}</h1>
+            {% if lead %}<p class="lead mt-5">{{ lead }}</p>{% endif %}
+        </div>
+    </div>
+</section>

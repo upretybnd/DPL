@@ -1,69 +1,57 @@
 {% extends 'base.html' %}
 {% load static %}
+{% block seo %}{% include 'include/seo.html' with title="Chapters" description="Find a Dynamic Public Library chapter near you — community reading rooms, youth wings and programs across Nepal." %}{% endblock %}
+
 {% block content %}
-<div class="container-fluid bg-light py-3 mb-4">
-    <div class="container-fluid bg-light py-2 mb-4">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-12 d-flex justify-content-start align-items-center">
-                    <p class="mb-0 me-2">You are here:</p>
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb mb-0">
-                            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Branches</li>
-                        </ol>
-                    </nav>
-                </div>
+{% include 'include/page_header.html' with eyebrow="Our chapters" title="Libraries run by the communities they serve" lead="Each DPL chapter is a volunteer-led reading room with its own board, programs and youth wing. Find one near you." crumb="Chapters" %}
+
+<section class="container-page -mt-8 relative z-10">
+    <form method="get" class="card flex flex-col gap-3 p-3 sm:flex-row sm:items-center" role="search">
+        <label class="relative flex-1">
+            <span class="sr-only">Search chapters</span>
+            <i data-lucide="search" class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-ink-900/40"></i>
+            <input type="search" name="q" value="{{ q }}" placeholder="Search by chapter or district" class="input border-0 pl-11 shadow-none focus:ring-0">
+        </label>
+        <label class="sm:w-56">
+            <span class="sr-only">Province</span>
+            <select name="province" class="input" onchange="this.form.submit()">
+                <option value="">All provinces</option>
+                {% for value, label in province_choices %}
+                    <option value="{{ value }}" {% if value == selected_province %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button type="submit" class="btn btn-dark">Search</button>
+    </form>
+</section>
+
+<section class="container-page section pt-12">
+    <p class="mb-6 text-sm muted">{{ chapters|length }} chapter{{ chapters|length|pluralize }}{% if q or selected_province %} found · <a href="{% url 'branch_details' %}" class="font-semibold text-ember-600">Clear filters</a>{% endif %}</p>
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {% for chapter in chapters %}
+            {% include 'branches/_chapter_card.html' %}
+        {% empty %}
+            {% include 'include/empty_state.html' with icon="library" title="No chapters found" text="Try a different search or province." %}
+        {% endfor %}
+    </div>
+
+    {% if boards %}
+        <div class="mt-20">
+            <p class="eyebrow">Leadership</p>
+            <h2 class="display-lg mt-4">National leadership</h2>
+            <div class="mt-8 grid gap-6 md:grid-cols-2">
+                {% for board in boards %}
+                    <a href="{{ board.get_absolute_url }}" class="card card-hover group flex items-center gap-5 p-6">
+                        <span class="grid size-14 shrink-0 place-items-center rounded-2xl bg-ink-900 text-white"><i data-lucide="{% if board.branch_type == 'senate' %}landmark{% else %}shield-check{% endif %}" class="size-6"></i></span>
+                        <span class="flex-1">
+                            <span class="block font-display text-xl font-semibold text-ink-900">{{ board.name }}</span>
+                            <span class="text-sm muted">{{ board.tagline|default:board.get_branch_type_display }}</span>
+                        </span>
+                        <i data-lucide="arrow-up-right" class="size-5 text-ink-900/40 transition group-hover:text-ember-600"></i>
+                    </a>
+                {% endfor %}
             </div>
         </div>
-    </div>
-</div>
-<div class="container-xxl py-5">
-        <div class="container-xxl py-5">
-    <div class="container">
-        <div class="text-center mx-auto mb-5" style="max-width: 600px;">
-            <p class="fw-medium text-uppercase text-primary mb-2">Our Chapters</p>
-            <h1 class="display-5">Dynamic Public Library Chapters</h1>
-        </div>
-        <p class="text-center text-secondary mb-4">
-            Discover the diverse chapters of the Dynamic Public Library, each dedicated to empowering communities with knowledge and learning opportunities. Explore now!
-        </p>
-        <!-- Horizontal Layout with Multiple Branches in One Row -->
-        <div class="row g-4">
-            {% for branch in branches %}
-                <div class="col-lg-4 col-md-6">
-                    <div class="box border border-primary text-center py-4" style="border-radius: 15px; transition: transform 0.3s ease-in-out;">
-                        <a href="{% url 'branch_detail' branch_id=branch.branch_id %}" class="stretched-link text-decoration-none">
-                            <h5 class="fw-bold text-primary mb-0">{{ branch.name }}</h5>
-                        </a>
-                    </div>
-                </div>
-            {% empty %}
-                <div class="col-12">
-                    <p class="text-center mb-0">No branches found.</p>
-                </div>
-            {% endfor %}
-        </div>
-    </div>
-    </div>
-</div>
-<!-- Hover Animation -->
-<style>
-    .box {
-        background-color: #f8f9fa;
-        border-width: 2px;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    .box:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        border-color: #0d6efd; /* Highlight border on hover */
-    }
-    .stretched-link h5 {
-        transition: color 0.3s ease;
-    }
-    .stretched-link:hover h5 {
-        color: #0d6efd;
-    }
-</style>
+    {% endif %}
+</section>
 {% endblock %}

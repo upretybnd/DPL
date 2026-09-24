@@ -100,7 +100,7 @@ class ReportsFeatureTests(TestCase):
         )
         ProjectReport.objects.create(project=project, report_period="2026-05")
         self.client.login(username="admin", password="pass123")
-        self.client.get(reverse("send_submission_reminders") + "?period=2026-05")
+        self.client.post(reverse("send_submission_reminders"), {"period": "2026-05"})
         self.assertTrue(
             Notification.objects.filter(user=self.reporter, title__icontains="reminder").exists()
         )
@@ -122,7 +122,7 @@ class ReportsFeatureTests(TestCase):
             external_url="https://example.com/photo",
         )
         self.client.login(username="outsider", password="pass123")
-        resp = self.client.get(reverse("evidence_delete", args=[evidence.id]))
+        resp = self.client.post(reverse("evidence_delete", args=[evidence.id]))
         self.assertEqual(resp.status_code, 403)
         self.assertTrue(ProjectEvidence.objects.filter(id=evidence.id).exists())
 
@@ -145,3 +145,96 @@ class ReportsFeatureTests(TestCase):
         latest = ReportStatusHistory.objects.filter(project=project).first()
         self.assertIsNotNone(latest)
         self.assertIn(note, latest.note)
+
+
+
+class DashboardPagesTests(TestCase):
+    """Every redesigned dashboard page renders for the roles that can see it."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user("nat", "nat@example.com", "pass12345!")
+        BranchRole.objects.create(user=self.admin, role=BranchRole.ROLE_NATIONAL_ADMIN)
+        self.branch = ParentBranch.objects.create(name="Damak", description="d")
+        self.project = Project.objects.create(
+            branch=self.branch, title="Reading Camp", project_type="Education", impact_summary="Great",
+            sdg_tags="SDG 4, SDG 10", status=Project.STATUS_SUBMITTED, beneficiaries_count=40, created_by=self.admin,
+        )
+        ProjectReport.objects.create(project=self.project, report_period="2026-05")
+        self.client.login(username="nat", password="pass12345!")
+
+    def test_dashboard_pages_render(self):
+        for url in [
+            reverse("national_dashboard"), reverse("national_analytics"), reverse("audit_log_list"),
+            reverse("branch_dashboard"), reverse("project_create"), reverse("project_detail", args=[self.project.id]),
+            reverse("my_notifications"),
+        ]:
+            with self.subTest(url=url):
+                self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_analytics_chart_data_is_serialised_once(self):
+        resp = self.client.get(reverse("national_analytics"))
+        self.assertEqual(resp.context["chart_data"]["totals"], [1])
+        self.assertContains(resp, '"sdg_labels": ["SDG 10", "SDG 4"]')
+
+    def test_review_card_lists_actions_for_submitted_project(self):
+        resp = self.client.get(reverse("project_detail", args=[self.project.id]))
+        self.assertEqual([a[0] for a in resp.context["review_actions"]], ["review", "approve", "reject"])
+        self.assertEqual(self.project.sdg_list, ["SDG 4", "SDG 10"])
+
+
+class NotificationTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("u", "u@example.com", "pass12345!")
+        self.client.login(username="u", password="pass12345!")
+
+    def test_open_marks_read_and_follows_internal_link(self):
+        n = Notification.objects.create(user=self.user, title="t", message="m", link="/reports/")
+        resp = self.client.get(reverse("notification_open", args=[n.id]))
+        self.assertEqual(resp["Location"], "/reports/")
+        n.refresh_from_db()
+        self.assertTrue(n.is_read)
+
+    def test_open_ignores_offsite_links(self):
+        n = Notification.objects.create(user=self.user, title="t", message="m", link="//evil.example")
+        resp = self.client.get(reverse("notification_open", args=[n.id]))
+        self.assertEqual(resp["Location"], reverse("my_notifications"))
+
+    def test_cannot_open_someone_elses_notification(self):
+        other = User.objects.create_user("o", "o@example.com", "x")
+        n = Notification.objects.create(user=other, title="t", message="m")
+        self.assertEqual(self.client.get(reverse("notification_open", args=[n.id])).status_code, 404)
+
+    def test_mark_all_read_and_header_badge(self):
+        Notification.objects.create(user=self.user, title="a", message="m")
+        Notification.objects.create(user=self.user, title="b", message="m")
+        self.assertEqual(self.client.get(reverse("home")).context["unread_notification_count"], 2)
+        self.client.post(reverse("notifications_mark_read"))
+        self.assertFalse(Notification.objects.filter(user=self.user, is_read=False).exists())
+
+
+
+class PortalTests(TestCase):
+    def test_visitors_see_portal_with_sign_in(self):
+        resp = self.client.get(reverse("portal"))
+        self.assertContains(resp, "DPL Management System")
+        self.assertContains(resp, "DPL MIS")
+        self.assertContains(self.client.get(reverse("home")), 'href="/portal/"')
+
+    def test_staff_are_sent_to_their_dashboard(self):
+        user = User.objects.create_user("staff", "staff@example.com", "pass12345!")
+        BranchRole.objects.create(user=user, role=BranchRole.ROLE_NATIONAL_ADMIN)
+        self.client.login(username="staff", password="pass12345!")
+        self.assertRedirects(self.client.get(reverse("portal")), reverse("report_home"), fetch_redirect_response=False)
+
+    def test_member_without_role_is_told_how_to_get_access(self):
+        User.objects.create_user("member", "m@example.com", "pass12345!")
+        self.client.login(username="member", password="pass12345!")
+        self.assertContains(self.client.get(reverse("portal")), "don't have a portal role yet")
+        self.assertRedirects(self.client.get(reverse("report_home")), reverse("portal"))
+
+    def test_staff_login_lands_on_dashboard(self):
+        user = User.objects.create_user("rep", "rep@example.com", "pass12345!")
+        branch = ParentBranch.objects.create(name="Damak", description="d")
+        BranchRole.objects.create(user=user, branch=branch, role=BranchRole.ROLE_REPORTER)
+        resp = self.client.post(reverse("login"), {"email": "rep@example.com", "password": "pass12345!"})
+        self.assertEqual(resp["Location"], reverse("report_home"))

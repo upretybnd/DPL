@@ -1,287 +1,207 @@
-from django.core.exceptions import ValidationError
-from forum.models import UserProfile
-from .utils import generate_verification_token
-from django.contrib.auth import authenticate, login, get_user_model
-from django.contrib.auth import logout as auth_logout
-from django.contrib.auth.models import User
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail, EmailMessage
-from django.http import HttpResponse
-import tempfile
+import logging
+
 from django.contrib import messages
-from django.shortcuts import render, redirect
-from django.db import IntegrityError
-from .forms import CandidacyForm
+from django.contrib.auth import get_user_model, login
+from django.contrib.auth import logout as auth_logout
+from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.tokens import default_token_generator
+from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
+from django.db import transaction
+from django.shortcuts import redirect, render
+from django.urls import reverse
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.views.decorators.http import require_POST
+
+from forum.models import UserProfile
+from reports.permissions import user_has_portal_access
+
+logger = logging.getLogger(__name__)
+User = get_user_model()
+
+FROM_EMAIL = "no-reply@dpl.org.np"
 
 
-
-def forget_password(request):
-    return render(request, 'account/forget_password.html')
-
-def logout(request):
-    # Perform logout
-    auth_logout(request)
-
-    return render(request, 'account/logout.html')
+def _user_from_uidb64(uidb64):
+    try:
+        return User.objects.get(pk=force_str(urlsafe_base64_decode(uidb64)))
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        return None
 
 
-def generate_verification_token(user_email):
-    user = User.objects.get(email=user_email)
-    uid = urlsafe_base64_encode(str(user.pk).encode())
+def _token_link(request, url_name, user):
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
-    return uid, token
+    return request.build_absolute_uri(reverse(url_name, kwargs={"uidb64": uid, "token": token}))
 
-def send_verification_email(user_email):
-    uid, token = generate_verification_token(user_email)
-    verification_link = f"http://dpl.org.np/accounts/verify-email/{uid}/{token}/"  # Make sure this URL matches your URL pattern
+
+def _unique_username(email):
+    base = email.split("@")[0][:140] or "member"
+    username = base
+    suffix = 1
+    while User.objects.filter(username__iexact=username).exists():
+        suffix += 1
+        username = f"{base}{suffix}"
+    return username
+
+
+def send_verification_email(request, user):
+    link = _token_link(request, "verify_email", user)
     send_mail(
         subject="Verify Your Email - Dynamic Public Library",
-        message=f"Hello, \n\nPlease verify your email by clicking on the link below:\n{verification_link}\n\nThank you!",
-        from_email="no-reply@dpl.org.np",
-        recipient_list=[user_email],
+        message=f"Hello,\n\nPlease verify your email by clicking on the link below:\n{link}\n\nThank you!",
+        from_email=FROM_EMAIL,
+        recipient_list=[user.email],
         fail_silently=False,
     )
 
+
+@require_POST
+def logout(request):
+    auth_logout(request)
+    return render(request, "account/logout.html")
+
+
 def sign_up(request):
-    if request.method == 'POST':
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        confirm_password = request.POST.get('confirmPassword')
+    if request.method != "POST":
+        return render(request, "account/sign_up.html")
 
-        # Validate inputs
-        if not email or not password or not confirm_password:
-            messages.error(request, 'All fields are required.')
-            return redirect('sign_up')
+    full_name = request.POST.get("fullName", "").strip()
+    email = request.POST.get("email", "").strip().lower()
+    password = request.POST.get("password", "")
+    confirm_password = request.POST.get("confirmPassword", "")
 
-        if password != confirm_password:
-            messages.error(request, 'Passwords do not match.')
-            return redirect('sign_up')
+    if not email or not password or not confirm_password:
+        messages.error(request, "All fields are required.")
+        return redirect("sign_up")
 
-        if User.objects.filter(email=email).exists():
-            messages.error(request, 'Email is already in use.')
-            return redirect('sign_up')
+    if password != confirm_password:
+        messages.error(request, "Passwords do not match.")
+        return redirect("sign_up")
 
-        try:
-            # Create inactive user
-            user = User.objects.create_user(username=email.split('@')[0], email=email, password=password)
-            user.is_active = False  # Make user inactive until verified
-            user.save()
+    if User.objects.filter(email__iexact=email).exists():
+        messages.error(request, "An account with this email already exists. Try logging in or resetting your password.")
+        return redirect("sign_up")
 
-            # Send verification email
-            send_verification_email(user.email)  # Ensure this function is implemented
+    try:
+        validate_password(password, user=User(email=email))
+    except ValidationError as e:
+        for error in e.messages:
+            messages.error(request, error)
+        return redirect("sign_up")
 
-            # Safely create user profile
-            UserProfile.objects.get_or_create(user=user)
+    with transaction.atomic():
+        user = User.objects.create_user(username=_unique_username(email), email=email, password=password)
+        user.is_active = False  # Activated once the email is verified
+        user.first_name = full_name[:150]
+        user.save()
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        if full_name:
+            profile.full_name = full_name
+            profile.save(update_fields=["full_name"])
 
-            messages.success(request, 'Account created! Please verify your email to activate your account.')
-            return redirect('login')
+    try:
+        send_verification_email(request, user)
+    except Exception:
+        logger.exception("Failed to send verification email to %s", email)
+        messages.warning(
+            request,
+            "Your account was created, but we could not send the verification email. Please contact us to activate it.",
+        )
+        return redirect("login")
 
-        except ValidationError as e:
-            messages.error(request, f'Error creating account: {", ".join(e.messages)}')
-            return redirect('sign_up')
+    messages.success(request, "Account created! Please check your email to activate your account.")
+    return redirect("login")
 
-        except IntegrityError:
-            messages.error(request, 'A profile already exists for this user.')
-            return redirect('sign_up')
-
-    return render(request, 'account/sign_up.html')
 
 def verify_email(request, uidb64, token):
-    try:
-        # Decode the UID
-        uid = urlsafe_base64_decode(uidb64).decode()
-        user = User.objects.get(pk=uid)
+    user = _user_from_uidb64(uidb64)
+    if user is None or not default_token_generator.check_token(user, token):
+        messages.error(request, "This verification link is invalid or has expired.")
+        return redirect("login")
 
-        # Check the token
-        if default_token_generator.check_token(user, token):
-            user.is_active = True  # Activate the user
-            user.save()
-            messages.success(request, "Email verified successfully! You can now log in.")
-            return redirect('login')
-        else:
-            return HttpResponse("Invalid or expired token.")
-
-    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-        return HttpResponse("Invalid token or user does not exist.")
+    user.is_active = True
+    user.save(update_fields=["is_active"])
+    messages.success(request, "Email verified successfully! You can now log in.")
+    return redirect("login")
 
 
 def login_view(request):
-    if request.method == 'POST':
-        email = request.POST.get('email')
-        password = request.POST.get('password')
+    if request.method == "POST":
+        email = request.POST.get("email", "").strip()
+        password = request.POST.get("password", "")
 
         if not email or not password:
-            messages.error(request, 'Both email and password are required.')
-            return redirect('login')
+            messages.error(request, "Both email and password are required.")
+            return redirect("login")
 
-        try:
-            user = User.objects.get(email=email)
-            user = authenticate(request, username=user.username, password=password)
+        # ModelBackend rejects inactive users, so check the password directly
+        # to tell unverified accounts apart from bad credentials.
+        user = User.objects.filter(email__iexact=email).order_by("-is_active", "pk").first()
+        if user is None or not user.check_password(password):
+            messages.error(request, "Invalid email or password.")
+        elif not user.is_active:
+            messages.error(request, "Your email is not verified yet. Please check your inbox for the verification link.")
+        else:
+            login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+            messages.success(request, "You are now logged in!")
+            next_url = request.POST.get("next") or request.GET.get("next")
+            if next_url and next_url.startswith("/") and not next_url.startswith("//"):
+                return redirect(next_url)
+            # Staff land on their management dashboard; members go to the home page.
+            if user_has_portal_access(user):
+                return redirect("report_home")
+            return redirect("home")
 
-            if user is not None:
-                if user.is_active:
-                    login(request, user)
-                    messages.success(request, 'You are now logged in!')
-                    return redirect('home')
-                else:
-                    messages.error(request, 'Your email is not verified yet.')
-            else:
-                messages.error(request, 'Invalid login credentials.')
-        except User.DoesNotExist:
-            messages.error(request, 'No account found with that email address.')
+    return render(request, "account/login.html")
 
-    return render(request, 'account/login.html')
 
 def forgot_password(request):
-    if request.method == 'POST':
-        email = request.POST.get('email')
+    if request.method == "POST":
+        email = request.POST.get("email", "").strip()
+        user = User.objects.filter(email__iexact=email, is_active=True).first()
+        if user is not None:
+            link = _token_link(request, "reset_password", user)
+            try:
+                send_mail(
+                    subject="Password Reset Request",
+                    message=f"Hi {user.username},\n\nPlease click the following link to reset your password:\n{link}\n\nIf you did not request this, you can ignore this email.",
+                    from_email=FROM_EMAIL,
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
+            except Exception:
+                logger.exception("Failed to send password reset email to %s", email)
 
-        try:
-            user = User.objects.get(email=email)
-            token = default_token_generator.make_token(user)
+        # Same response whether or not the account exists, so emails can't be enumerated.
+        messages.success(request, "If an account exists for that email, a password reset link has been sent.")
+        return redirect("login")
 
-            uid = urlsafe_base64_encode(str(user.pk).encode())
-
-            # Create the reset link
-            reset_link = f"http://127.0.0.1:8002/accounts/reset-password/{uid}/{token}/"
-
-            # Send the reset link to the user's email
-            send_mail(
-                subject="Password Reset Request",
-                message=f"Hi {user.username},\n\nPlease click the following link to reset your password:\n{reset_link}\n\nThank you.",
-                from_email="no-reply@dpl.org.np",
-                recipient_list=[email],
-                fail_silently=False,
-            )
-
-            messages.success(request, 'Password reset link has been sent to your email address.')
-            return redirect('login')
-        except User.DoesNotExist:
-            messages.error(request, 'No account found with that email address.')
-            return redirect('forgot_password')
-
-    return render(request, 'account/forget_password.html')
+    return render(request, "account/forget_password.html")
 
 
 def reset_password(request, uidb64, token):
-    try:
-        # Decode the UID and retrieve the user
-        uid = urlsafe_base64_decode(uidb64).decode()
-        user = get_user_model().objects.get(pk=uid)
+    user = _user_from_uidb64(uidb64)
+    if user is None or not default_token_generator.check_token(user, token):
+        messages.error(request, "The password reset link is invalid or has expired.")
+        return redirect("forgot_password")
 
-        # Check if the token is valid
-        if default_token_generator.check_token(user, token):
-            if request.method == 'POST':
-                new_password = request.POST.get('password')
-                user.set_password(new_password)  # Set the new password
-                user.save()
-                messages.success(request, 'Your password has been reset successfully. You can now log in with your new password.')
-                return redirect('login')  # Redirect to login page after successful reset
-
-            return render(request, 'account/reset_password.html', {'uid': uidb64, 'token': token})
+    if request.method == "POST":
+        new_password = request.POST.get("password", "")
+        confirm_password = request.POST.get("confirmPassword", "")
+        if new_password != confirm_password:
+            messages.error(request, "Passwords do not match.")
         else:
-            messages.error(request, 'The password reset link is invalid or has expired.')
-            return redirect('forgot_password')  # Redirect to forgot password page if the token is invalid
-    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-        messages.error(request, 'Invalid password reset link.')
-        return redirect('forgot_password')  # Redirect to forgot password if something goes
-
-
-
-
-
-
-def register_candidacy(request):
-    if request.method == 'POST':
-        form = CandidacyForm(request.POST, request.FILES)
-        if form.is_valid():
-            candidate = form.save()
-
-            # Generate PDF from form data using ReportLab
             try:
-                from reportlab.lib.pagesizes import letter
-                from reportlab.pdfgen import canvas
-            except ImportError:
-                messages.error(
-                    request,
-                    "Nomination was saved, but PDF generation is unavailable because ReportLab is not installed.",
-                )
-                return redirect("register_candidacy")
+                validate_password(new_password, user=user)
+            except ValidationError as e:
+                for error in e.messages:
+                    messages.error(request, error)
+            else:
+                user.set_password(new_password)
+                user.save()
+                messages.success(request, "Your password has been reset. You can now log in with your new password.")
+                return redirect("login")
 
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
-                c = canvas.Canvas(tmp_file.name, pagesize=letter)
-                # Drawing candidate data
-                c.setFont("Helvetica", 12)
-
-                # Candidate details (example)
-                c.drawString(100, 750, f"Nominee: {candidate.full_name}")
-                c.drawString(100, 730, f"Position: {candidate.position}")
-                c.drawString(100, 710, f"Email: {candidate.email}")
-                c.drawString(100, 690, f"Phone Number: {candidate.phone_number}")
-                c.drawString(100, 670, f"Address: {candidate.address}")
-                c.drawString(100, 650, f"Date of Birth: {candidate.date_of_birth}")
-                c.drawString(100, 630, f"Past Position: {candidate.past_position}")
-
-                # Handling images
-                if candidate.profile_picture:
-                    profile_picture_path = candidate.profile_picture.path
-                    c.drawImage(profile_picture_path, 100, 550, width=100, height=100)
-
-                if candidate.citizenship_document:
-                    citizenship_doc_path = candidate.citizenship_document.path
-                    c.drawImage(citizenship_doc_path, 100, 450, width=100, height=100)
-
-                if candidate.payment_screenshot:
-                    payment_screenshot_path = candidate.payment_screenshot.path
-                    c.drawImage(payment_screenshot_path, 100, 350, width=100, height=100)
-
-                # Save PDF file
-                c.save()
-
-                # Send confirmation email to candidate
-                try:
-                    send_mail(
-                        subject='Nomination Confirmation',
-                        message=f"""
-Dear {candidate.full_name},
-
-Congratulations! You have successfully registered your candidacy for the position of {candidate.position}.
-
-We wish you all the best.
-
-Regards,  
-Election Committee  
-Dynamic Public Library
-""",
-                        from_email='no-reply@dpl.org.np',
-                        recipient_list=[candidate.email],
-                        fail_silently=False,
-                    )
-
-                    # Send the PDF to the election committee
-                    committee_email = 'election@dpl.org.np'
-                    election_email = EmailMessage(
-                        subject=f'New Candidacy Registration: {candidate.full_name}',
-                        body=f'Please find the attached nomination document for {candidate.full_name}.',
-                        from_email='no-reply@dpl.org.np',
-                        to=[committee_email],
-                    )
-
-                    # Attach the PDF
-                    election_email.attach_file(tmp_file.name)
-
-                    # Send the email to the election committee
-                    election_email.send(fail_silently=False)
-
-                    # Provide success message
-                    messages.success(request, 'Your candidacy has been successfully submitted.')
-                    return render(request, 'election/success_candidate_registration.html')
-                except Exception as e:
-                    messages.warning(request, f"Your nomination was submitted, but an error occurred while sending the email: {e}")
-        else:
-            messages.error(request, 'Please correct the errors below.')
-    else:
-        form = CandidacyForm()
-
-    return render(request, 'election/register_candidacy.html', {'form': form})
+    return render(request, "account/reset_password.html", {"uid": uidb64, "token": token})

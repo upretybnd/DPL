@@ -1,92 +1,133 @@
 {% extends 'base.html' %}
+{% block seo %}{% include 'include/seo.html' with title="Analytics" noindex=True %}{% endblock %}
+
 {% block content %}
-<div class="container-xxl py-5 reports-shell">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-            <div>
-                <p class="text-uppercase text-primary mb-1">National Analytics</p>
-                <h2 class="mb-0">Trends, Rankings, and SDG Distribution</h2>
-            </div>
-            <div class="d-flex gap-2">
-                <a class="btn btn-outline-success" href="{% url 'national_analytics_export_csv' %}">Export CSV</a>
-                <a class="btn btn-outline-primary" href="{% url 'national_dashboard' %}">Back to Dashboard</a>
-            </div>
-        </div>
+{% include 'reports/_dash_shell.html' with eyebrow="National analytics" title="Trends, rankings & SDGs" active="analytics" %}
 
-        <div class="row g-4 mb-4">
-            <div class="col-xl-8">
-                <div class="report-form-card h-100">
-                    <h5 class="mb-3">Monthly Project and Approval Trend</h5>
-                    <canvas id="trendChart" height="120"></canvas>
-                </div>
-            </div>
-            <div class="col-xl-4">
-                <div class="report-form-card h-100">
-                    <h5 class="mb-3">Top SDG Tags</h5>
-                    <canvas id="sdgChart" height="220"></canvas>
-                </div>
-            </div>
-        </div>
+<section class="container-page py-10">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <p class="text-sm muted">All projects across every branch, by event month.</p>
+        <a class="btn btn-outline" href="{% url 'national_analytics_export_csv' %}"><i data-lucide="download" class="size-4"></i> Export CSV</a>
+    </div>
 
-        <div class="report-table-wrap">
-            <table class="table report-table mb-0">
-                <thead>
-                    <tr><th>Rank</th><th>Branch</th><th>Projects</th><th>Approved</th><th>Beneficiaries</th><th>Volunteer Hours</th></tr>
-                </thead>
-                <tbody>
+    <dl class="mt-6 grid grid-cols-3 gap-4">
+        {% include 'reports/_stat.html' with label="Projects" value=totals.projects icon="folder-kanban" %}
+        {% include 'reports/_stat.html' with label="Approved" value=totals.approved icon="badge-check" %}
+        {% include 'reports/_stat.html' with label="People reached" value=totals.beneficiaries icon="users" %}
+    </dl>
+
+    {% if chart_data.labels %}
+    <div class="mt-6 grid gap-6 xl:grid-cols-2">
+        <figure class="card card-body">
+            <figcaption>
+                <h2 class="font-display text-xl font-semibold text-ink-900">Projects per month</h2>
+                <ul class="mt-2 flex gap-5 text-xs text-ink-900/70" aria-label="Legend">
+                    <li class="flex items-center gap-2"><span class="h-0.5 w-5 rounded bg-[#3457a8]"></span>Total</li>
+                    <li class="flex items-center gap-2"><span class="h-0.5 w-5 rounded bg-[#ff5e14]"></span>Approved</li>
+                </ul>
+            </figcaption>
+            <div class="relative mt-4 h-72"><canvas id="projectsChart" role="img" aria-label="Line chart of total and approved projects per month"></canvas></div>
+        </figure>
+        <figure class="card card-body">
+            <figcaption><h2 class="font-display text-xl font-semibold text-ink-900">People reached per month</h2></figcaption>
+            <div class="relative mt-4 h-72"><canvas id="reachChart" role="img" aria-label="Bar chart of people reached per month"></canvas></div>
+        </figure>
+    </div>
+
+    <details class="card mt-4 overflow-hidden">
+        <summary class="cursor-pointer px-6 py-4 text-sm font-semibold text-ink-900">View monthly data as a table</summary>
+        <table class="table">
+            <thead><tr><th>Month</th><th class="text-right">Projects</th><th class="text-right">Approved</th><th class="text-right">People reached</th></tr></thead>
+            <tbody class="divide-y divide-line">
+                {% for row in monthly_rows %}
+                    <tr><td>{{ row.label }}</td><td class="text-right tabular-nums">{{ row.total }}</td><td class="text-right tabular-nums">{{ row.approved }}</td><td class="text-right tabular-nums">{{ row.beneficiaries }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </details>
+    {% else %}
+        <div class="mt-6">{% include 'include/empty_state.html' with icon="line-chart" title="No project data yet" text="Charts appear once branches start reporting projects." %}</div>
+    {% endif %}
+
+    <div class="mt-6 grid gap-6 xl:grid-cols-5">
+        <div class="xl:col-span-3">
+            <h2 class="display-md">Branch rankings</h2>
+            <div class="table-wrap mt-4">
+                <table class="table">
+                    <thead><tr><th>#</th><th>Branch</th><th class="text-right">Projects</th><th class="text-right">Approved</th><th class="text-right">People</th><th class="text-right">Hours</th></tr></thead>
+                    <tbody class="divide-y divide-line">
                     {% for row in branch_rankings %}
                         <tr>
-                            <td>{{ forloop.counter }}</td>
-                            <td>{{ row.name }}</td>
-                            <td>{{ row.total_projects|default:0 }}</td>
-                            <td>{{ row.approved_projects|default:0 }}</td>
-                            <td>{{ row.total_beneficiaries|default:0 }}</td>
-                            <td>{{ row.total_hours|default:0 }}</td>
+                            <td class="font-display font-semibold text-ink-900/50">{{ forloop.counter }}</td>
+                            <td class="font-semibold text-ink-900">{{ row.name }}</td>
+                            <td class="text-right tabular-nums">{{ row.total_projects|default:0 }}</td>
+                            <td class="text-right tabular-nums">{{ row.approved_projects|default:0 }}</td>
+                            <td class="text-right tabular-nums">{{ row.total_beneficiaries|default:0 }}</td>
+                            <td class="text-right tabular-nums">{{ row.total_hours|default:0 }}</td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="6">No branch data available.</td></tr>
+                        <tr><td colspan="6" class="py-10 text-center muted">No branch data yet.</td></tr>
                     {% endfor %}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
+        <figure class="card card-body xl:col-span-2">
+            <figcaption><h2 class="font-display text-xl font-semibold text-ink-900">Top SDG tags</h2><p class="text-xs muted">Projects tagged with each goal</p></figcaption>
+            {% if chart_data.sdg_labels %}
+                <div class="relative mt-4" style="height: calc({{ chart_data.sdg_labels|length }} * 32px + 48px); min-height: 180px"><canvas id="sdgChart" role="img" aria-label="Bar chart of projects per SDG tag"></canvas></div>
+            {% else %}
+                <p class="mt-6 text-sm muted">No SDG tags recorded yet.</p>
+            {% endif %}
+        </figure>
     </div>
-</div>
+</section>
+{{ chart_data|json_script:"chart-data" }}
+{% endblock %}
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-{{ trend_labels_json|json_script:"trend-labels" }}
-{{ trend_totals_json|json_script:"trend-totals" }}
-{{ trend_approved_json|json_script:"trend-approved" }}
-{{ trend_beneficiaries_json|json_script:"trend-beneficiaries" }}
-{{ sdg_labels_json|json_script:"sdg-labels" }}
-{{ sdg_counts_json|json_script:"sdg-counts" }}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
-const trendLabels = JSON.parse(document.getElementById("trend-labels").textContent);
-const trendTotals = JSON.parse(document.getElementById("trend-totals").textContent);
-const trendApproved = JSON.parse(document.getElementById("trend-approved").textContent);
-const trendBeneficiaries = JSON.parse(document.getElementById("trend-beneficiaries").textContent);
-const sdgLabels = JSON.parse(document.getElementById("sdg-labels").textContent);
-const sdgCounts = JSON.parse(document.getElementById("sdg-counts").textContent);
+(() => {
+    const data = JSON.parse(document.getElementById('chart-data').textContent);
+    if (!window.Chart) return;
+    const INK = '#3457a8', EMBER = '#ff5e14', TEXT = 'rgba(2,36,91,.62)', GRID = 'rgba(2,36,91,.07)';
+    Chart.defaults.font.family = '"Plus Jakarta Sans", system-ui, sans-serif';
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = TEXT;
+    const tooltip = { backgroundColor: '#01163a', padding: 10, cornerRadius: 10, titleFont: { weight: '600' }, boxPadding: 4, usePointStyle: true };
+    const axes = (horizontal) => ({
+        x: { grid: { display: !!horizontal, color: GRID }, border: { display: false }, ticks: horizontal ? { precision: 0 } : {} },
+        y: { grid: { display: !horizontal, color: GRID }, border: { display: false }, beginAtZero: true, ticks: horizontal ? {} : { precision: 0 } },
+    });
+    const line = (label, values, color) => ({
+        label, data: values, borderColor: color, backgroundColor: color, borderWidth: 2, tension: .3,
+        pointRadius: 4, pointHoverRadius: 6, pointBorderColor: '#fff', pointBorderWidth: 2,
+    });
 
-new Chart(document.getElementById("trendChart"), {
-    type: "line",
-    data: {
-        labels: trendLabels,
-        datasets: [
-            { label: "Total Projects", data: trendTotals, borderColor: "#0d6efd", backgroundColor: "rgba(13,110,253,0.15)", fill: true, tension: 0.25 },
-            { label: "Approved Projects", data: trendApproved, borderColor: "#198754", backgroundColor: "rgba(25,135,84,0.15)", fill: true, tension: 0.25 },
-            { label: "Beneficiaries", data: trendBeneficiaries, borderColor: "#fd7e14", backgroundColor: "rgba(253,126,20,0.12)", fill: true, tension: 0.25 }
-        ]
-    },
-    options: { responsive: true, maintainAspectRatio: false }
-});
+    const projects = document.getElementById('projectsChart');
+    if (projects) new Chart(projects, {
+        type: 'line',
+        data: { labels: data.labels, datasets: [line('Total', data.totals, INK), line('Approved', data.approved, EMBER)] },
+        options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                   plugins: { legend: { display: false }, tooltip }, scales: axes(false) },
+    });
 
-new Chart(document.getElementById("sdgChart"), {
-    type: "bar",
-    data: {
-        labels: sdgLabels,
-        datasets: [{ label: "Projects", data: sdgCounts, backgroundColor: "#fd7e14" }]
-    },
-    options: { indexAxis: "y", responsive: true, maintainAspectRatio: false }
-});
+    const reach = document.getElementById('reachChart');
+    if (reach) new Chart(reach, {
+        type: 'bar',
+        data: { labels: data.labels, datasets: [{ label: 'People reached', data: data.beneficiaries, backgroundColor: INK,
+                borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: 'bottom', maxBarThickness: 28, borderColor: '#fff', borderWidth: { left: 1, right: 1 } }] },
+        options: { maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip }, scales: axes(false) },
+    });
+
+    const sdg = document.getElementById('sdgChart');
+    if (sdg) new Chart(sdg, {
+        type: 'bar',
+        data: { labels: data.sdg_labels, datasets: [{ label: 'Projects', data: data.sdg_counts, backgroundColor: INK,
+                borderRadius: { topRight: 4, bottomRight: 4 }, borderSkipped: 'left', maxBarThickness: 18 }] },
+        options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip }, scales: axes(true) },
+    });
+})();
 </script>
 {% endblock %}

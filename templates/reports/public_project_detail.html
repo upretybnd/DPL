@@ -1,65 +1,75 @@
 {% extends 'base.html' %}
-{% block content %}
-<div class="container-xxl py-5 reports-shell">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
-            <div>
-                <p class="text-uppercase text-primary mb-1">{{ project.branch.name }}</p>
-                <h2 class="mb-1">{{ project.title }}</h2>
-                <span class="status-badge status-{{ project.status }}">{{ project.get_status_display }}</span>
-            </div>
-            <a class="btn btn-outline-primary" href="{% url 'public_project_list' %}">Back to Public Reports</a>
-        </div>
+{% block seo %}{% include 'include/seo.html' with title=project.title description=project.impact_summary type="article" %}{% endblock %}
 
-        <div class="row g-4">
-            <div class="col-lg-8">
-                <div class="report-form-card mb-3">
-                    <h5>Impact Summary</h5>
-                    <p>{{ project.impact_summary }}</p>
-                    <div class="row g-3">
-                        <div class="col-md-4"><strong>Type:</strong> {{ project.project_type }}</div>
-                        <div class="col-md-4"><strong>Date:</strong> {{ project.event_date }}</div>
-                        <div class="col-md-4"><strong>Location:</strong> {{ project.location|default:"N/A" }}</div>
-                        <div class="col-md-4"><strong>Beneficiaries:</strong> {{ project.beneficiaries_count }}</div>
-                        <div class="col-md-4"><strong>Volunteer Hours:</strong> {{ project.volunteer_hours }}</div>
-                        <div class="col-md-4"><strong>Budget:</strong> {{ project.budget_actual }} / {{ project.budget_planned }}</div>
-                    </div>
+{% block content %}
+<article>
+    <header class="bg-grain border-b border-line">
+        <div class="container-page pb-12 pt-10">
+            <nav aria-label="Breadcrumb" class="text-sm muted">
+                <a href="{% url 'home' %}" class="hover:text-ink-900">Home</a> / <a href="{% url 'public_project_list' %}" class="hover:text-ink-900">Impact reports</a>
+            </nav>
+            <div class="reveal mt-8 max-w-4xl">
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ project.branch.get_absolute_url }}" class="badge badge-ember">{{ project.branch.name }}</a>
+                    <span class="badge badge-soft">{{ project.project_type }}</span>
+                    {% for tag in project.sdg_list %}<span class="badge badge-ink">{{ tag }}</span>{% endfor %}
                 </div>
+                <h1 class="display-xl mt-4 text-balance">{{ project.title }}</h1>
+                <p class="mt-4 text-sm muted">{{ project.event_date|date:"j F Y" }}{% if project.location %} · {{ project.location }}{% endif %}</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="container-page section pt-10">
+        <dl class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {% include 'reports/_stat.html' with label="People reached" value=project.beneficiaries_count icon="users" %}
+            {% include 'reports/_stat.html' with label="Volunteer hours" value=project.volunteer_hours icon="clock" %}
+            {% include 'reports/_stat.html' with label="Budget used (NPR)" value=project.budget_actual|floatformat:0 icon="wallet" %}
+            {% include 'reports/_stat.html' with label="Evidence items" value=evidences|length icon="paperclip" %}
+        </dl>
+
+        <div class="mt-10 grid gap-10 lg:grid-cols-3">
+            <div class="lg:col-span-2">
+                <h2 class="display-md">What happened</h2>
+                <p class="prose-dpl mt-4 whitespace-pre-line">{{ project.impact_summary }}</p>
 
                 {% if report %}
-                <div class="report-form-card mb-3">
-                    <h5>Reported Outcomes</h5>
-                    <p><strong>Objectives:</strong> {{ report.objectives|default:"N/A" }}</p>
-                    <p><strong>Outcomes:</strong> {{ report.outcomes|default:"N/A" }}</p>
-                    <p><strong>Challenges:</strong> {{ report.challenges|default:"N/A" }}</p>
-                    <p class="mb-0"><strong>Lessons:</strong> {{ report.lessons_learned|default:"N/A" }}</p>
+                <div class="mt-10 grid gap-5 sm:grid-cols-2">
+                    {% if report.objectives %}<div class="panel"><h3 class="font-sans text-xs font-semibold uppercase tracking-wider muted">Objectives</h3><p class="mt-2 whitespace-pre-line text-sm">{{ report.objectives }}</p></div>{% endif %}
+                    {% if report.outcomes %}<div class="panel"><h3 class="font-sans text-xs font-semibold uppercase tracking-wider muted">Outcomes</h3><p class="mt-2 whitespace-pre-line text-sm">{{ report.outcomes }}</p></div>{% endif %}
+                    {% if report.challenges %}<div class="panel"><h3 class="font-sans text-xs font-semibold uppercase tracking-wider muted">Challenges</h3><p class="mt-2 whitespace-pre-line text-sm">{{ report.challenges }}</p></div>{% endif %}
+                    {% if report.lessons_learned %}<div class="panel"><h3 class="font-sans text-xs font-semibold uppercase tracking-wider muted">Lessons learned</h3><p class="mt-2 whitespace-pre-line text-sm">{{ report.lessons_learned }}</p></div>{% endif %}
                 </div>
                 {% endif %}
             </div>
 
-            <div class="col-lg-4">
-                <div class="report-form-card mb-3">
-                    <h5>Evidence Items</h5>
-                    <ul class="mb-0">
-                        {% for item in evidences %}
-                            <li>{{ item.get_evidence_type_display }}: {{ item.title }}</li>
-                        {% empty %}
-                            <li>No evidence listed.</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                <div class="report-form-card">
-                    <h5>Beneficiary Breakdown</h5>
-                    <ul class="mb-0">
+            <aside class="space-y-6">
+                {% if beneficiary_stats %}
+                <div class="card card-body">
+                    <h2 class="font-sans text-sm font-semibold uppercase tracking-wider muted">Who we reached</h2>
+                    <ul class="mt-4 space-y-3 text-sm">
                         {% for stat in beneficiary_stats %}
-                            <li>{{ stat.group_name }}: {{ stat.total }}</li>
-                        {% empty %}
-                            <li>No beneficiary group details listed.</li>
+                            <li>
+                                <div class="flex justify-between"><span class="font-semibold text-ink-900">{{ stat.group_name }}</span><span class="tabular-nums">{{ stat.total }}</span></div>
+                                <p class="text-xs muted">{{ stat.female_count }} female · {{ stat.male_count }} male{% if stat.other_count %} · {{ stat.other_count }} other{% endif %}</p>
+                            </li>
                         {% endfor %}
                     </ul>
                 </div>
-            </div>
+                {% endif %}
+                <div class="card card-body">
+                    <h2 class="font-sans text-sm font-semibold uppercase tracking-wider muted">Evidence</h2>
+                    <ul class="mt-4 space-y-2 text-sm">
+                        {% for item in evidences %}
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="size-4 text-emerald-600"></i>{{ item.get_evidence_type_display }}: {{ item.title }}</li>
+                        {% empty %}
+                            <li class="muted">No evidence listed.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <a href="{{ project.branch.get_absolute_url }}" class="btn btn-outline w-full">More from {{ project.branch.name }}</a>
+            </aside>
         </div>
     </div>
-</div>
+</article>
 {% endblock %}

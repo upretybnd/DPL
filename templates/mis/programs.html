@@ -1,0 +1,39 @@
+{% extends 'mis/_workspace.html' %}
+{% block workspace %}
+<div class="flex flex-wrap items-center justify-between gap-3">
+    <h2 class="display-md">Programs <span class="text-base font-normal muted">({{ programs|length }})</span></h2>
+    <a href="{% url 'mis_program_create' branch.branch_id %}" class="btn btn-primary"><i data-lucide="plus" class="size-4"></i> New program</a>
+</div>
+<div class="table-wrap mt-4">
+    <table class="table">
+        <thead><tr><th>Program</th><th>Date</th><th>Coordinator</th><th class="text-right">Photos</th><th class="sr-only">Actions</th></tr></thead>
+        <tbody class="divide-y divide-line">
+        {% for program in programs %}
+            <tr>
+                <td>
+                    <div class="flex items-center gap-3">
+                        {% if program.image %}<img src="{{ program.image.url }}" alt="" class="size-12 rounded-xl object-cover">{% endif %}
+                        <a href="{% url 'mis_program_edit' branch.branch_id program.id %}" class="font-semibold text-ink-900 hover:text-ember-600">{{ program.title }}</a>
+                    </div>
+                </td>
+                <td class="whitespace-nowrap">{{ program.program_date|date:"j M Y" }}</td>
+                <td>{{ program.coordinator_name }}</td>
+                <td class="text-right tabular-nums">{{ program.photo_total }}</td>
+                <td>
+                    <div class="flex justify-end gap-1">
+                        <a href="{{ program.get_absolute_url }}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" aria-label="View {{ program.title }}"><i data-lucide="external-link" class="size-4"></i></a>
+                        <a href="{% url 'mis_program_edit' branch.branch_id program.id %}" class="btn btn-ghost btn-sm" aria-label="Edit {{ program.title }}"><i data-lucide="pencil" class="size-4"></i></a>
+                        <form method="post" action="{% url 'mis_program_delete' branch.branch_id program.id %}" onsubmit="return confirm('Delete this program and all its photos?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-ghost btn-sm !text-red-700" aria-label="Delete {{ program.title }}"><i data-lucide="trash-2" class="size-4"></i></button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="5" class="py-10 text-center muted">No programs yet. <a href="{% url 'mis_program_create' branch.branch_id %}" class="font-semibold text-ember-600">Add your first program</a>.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% comment %}Args: page (a Page object), query (extra querystring without page, e.g. "q=x&branch=1"){% endcomment %}
+{% if page.has_other_pages %}
+<nav class="pager" aria-label="Pagination">
+    {% if page.has_previous %}
+        <a href="?page={{ page.previous_page_number }}{% if query %}&{{ query }}{% endif %}" aria-label="Previous page"><i data-lucide="arrow-left" class="inline size-4"></i></a>
+    {% endif %}
+    {% for num in page.paginator.page_range %}
+        {% if num == page.number %}
+            <span class="current" aria-current="page">{{ num }}</span>
+        {% elif num > page.number|add:"-3" and num < page.number|add:"3" %}
+            <a href="?page={{ num }}{% if query %}&{{ query }}{% endif %}">{{ num }}</a>
+        {% endif %}
+    {% endfor %}
+    {% if page.has_next %}
+        <a href="?page={{ page.next_page_number }}{% if query %}&{{ query }}{% endif %}" aria-label="Next page"><i data-lucide="arrow-right" class="inline size-4"></i></a>
+    {% endif %}
+</nav>
+{% endif %}

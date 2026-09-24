@@ -1,41 +1,46 @@
 {% extends 'base.html' %}
+{% block seo %}{% include 'include/seo.html' with title="New project report" noindex=True %}{% endblock %}
+
 {% block content %}
-<div class="container-xxl py-5 reports-shell">
-    <div class="container" style="max-width: 980px;">
-        <div class="mb-4">
-            <p class="text-uppercase text-primary mb-1">Project Reporting</p>
-            <h2 class="mb-0">{% if mode == 'create' %}Create Project Report{% else %}Edit Project Report{% endif %}</h2>
+<section class="container-page max-w-4xl py-10">
+    <nav class="text-sm muted" aria-label="Breadcrumb"><a href="{% url 'report_home' %}" class="hover:text-ink-900">Dashboard</a> / <span class="text-ink-900">New report</span></nav>
+    <h1 class="display-lg mt-4">{% if mode == 'create' %}Create a project report{% else %}Edit project report{% endif %}</h1>
+    <p class="mt-2 muted">Save as a draft, add evidence, then submit it for national review.</p>
+
+    <form method="post" class="mt-8 space-y-6" novalidate>
+        {% csrf_token %}
+        {% for error in form.non_field_errors %}<div class="alert alert-error">{{ error }}</div>{% endfor %}
+
+        <div class="card card-body">
+            <h2 class="display-md">Project</h2>
+            <div class="mt-6 grid gap-5 sm:grid-cols-2">
+                {% for field in form %}
+                    {% if field.name == 'impact_summary' or field.name == 'title' %}
+                        {% include 'include/field.html' with field=field span="sm:col-span-2" %}
+                    {% else %}
+                        {% include 'include/field.html' with field=field %}
+                    {% endif %}
+                {% endfor %}
+            </div>
         </div>
 
-        <form method="post" class="report-form-card">
-            {% csrf_token %}
-            <div class="row g-3">
-                {% for field in form %}
-                    <div class="col-md-6 {% if field.name == 'impact_summary' %}col-12{% endif %}">
-                        <label class="form-label">{{ field.label }}</label>
-                        {{ field }}
-                        {% if field.errors %}<div class="text-danger small">{{ field.errors|striptags }}</div>{% endif %}
-                    </div>
-                {% endfor %}
-            </div>
-
-            <hr class="my-4">
-            <h5>Report Details</h5>
-            <div class="row g-3">
+        <div class="card card-body">
+            <h2 class="display-md">Report details</h2>
+            <div class="mt-6 grid gap-5 sm:grid-cols-2">
                 {% for field in report_form %}
-                    <div class="col-md-6 {% if field.field.widget.input_type == 'textarea' %}col-12{% endif %}">
-                        <label class="form-label">{{ field.label }}</label>
-                        {{ field }}
-                        {% if field.errors %}<div class="text-danger small">{{ field.errors|striptags }}</div>{% endif %}
-                    </div>
+                    {% if field.field.widget.input_type %}
+                        {% include 'include/field.html' with field=field %}
+                    {% else %}
+                        {% include 'include/field.html' with field=field span="sm:col-span-2" %}
+                    {% endif %}
                 {% endfor %}
             </div>
+        </div>
 
-            <div class="mt-4 d-flex gap-2">
-                <button class="btn btn-primary" type="submit">Save Draft</button>
-                <a class="btn btn-outline-secondary" href="{% url 'branch_dashboard' %}">Cancel</a>
-            </div>
-        </form>
-    </div>
-</div>
+        <div class="flex gap-3">
+            <button class="btn btn-primary btn-lg" type="submit"><i data-lucide="save" class="size-4"></i> {% if mode == 'edit' %}Save changes{% else %}Save draft{% endif %}</button>
+            <a class="btn btn-ghost btn-lg" href="{% if project %}{% url 'project_detail' project.id %}{% else %}{% url 'branch_dashboard' %}{% endif %}">Cancel</a>
+        </div>
+    </form>
+</section>
 {% endblock %}

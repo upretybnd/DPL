@@ -1,60 +1,40 @@
 {% extends 'base.html' %}
+{% block seo %}{% include 'include/seo.html' with title="Audit log" noindex=True %}{% endblock %}
+
 {% block content %}
-<div class="container-xxl py-5 reports-shell">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-            <div>
-                <p class="text-uppercase text-primary mb-1">Governance</p>
-                <h2 class="mb-0">Audit Log</h2>
-            </div>
-            <div class="d-flex gap-2">
-                <a class="btn btn-outline-success" href="{% url 'audit_log_export_csv' %}">Export CSV</a>
-                <a class="btn btn-outline-primary" href="{% url 'national_dashboard' %}">Back</a>
-            </div>
-        </div>
+{% include 'reports/_dash_shell.html' with eyebrow="Governance" title="Audit log" active="audit" %}
 
-        <form method="get" class="report-filter mb-3">
-            <div class="row g-2">
-                <div class="col-md-10"><input type="text" class="form-control" name="action" value="{{ action }}" placeholder="Filter by action"></div>
-                <div class="col-md-2"><button class="btn btn-primary w-100" type="submit">Filter</button></div>
-            </div>
+<section class="container-page py-10">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <form method="get" class="flex gap-2" role="search">
+            <label class="relative"><span class="sr-only">Filter by action</span>
+                <i data-lucide="search" class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-ink-900/40"></i>
+                <input type="search" class="input w-72 pl-11" name="action" value="{{ action }}" placeholder="Filter by action, e.g. approve">
+            </label>
+            <button class="btn btn-dark" type="submit">Filter</button>
         </form>
-
-        <div class="report-table-wrap">
-            <table class="table report-table mb-0">
-                <thead>
-                    <tr><th>When</th><th>Actor</th><th>Action</th><th>Entity</th><th>Branch</th><th>Details</th></tr>
-                </thead>
-                <tbody>
-                    {% for log in logs %}
-                    <tr>
-                        <td>{{ log.created_at }}</td>
-                        <td>{% if log.actor %}{{ log.actor.username }}{% else %}System{% endif %}</td>
-                        <td>{{ log.action }}</td>
-                        <td>{{ log.entity_type }} #{{ log.entity_id }}</td>
-                        <td>{% if log.branch %}{{ log.branch.name }}{% else %}-{% endif %}</td>
-                        <td>{{ log.details }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="6">No logs found.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        {% if logs.paginator.num_pages > 1 %}
-        <nav class="mt-4">
-            <ul class="pagination">
-                {% if logs.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page={{ logs.previous_page_number }}&action={{ action }}">Previous</a></li>
-                {% endif %}
-                <li class="page-item disabled"><span class="page-link">Page {{ logs.number }} of {{ logs.paginator.num_pages }}</span></li>
-                {% if logs.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ logs.next_page_number }}&action={{ action }}">Next</a></li>
-                {% endif %}
-            </ul>
-        </nav>
-        {% endif %}
+        <a class="btn btn-outline" href="{% url 'audit_log_export_csv' %}"><i data-lucide="download" class="size-4"></i> Export CSV</a>
     </div>
-</div>
+
+    <div class="table-wrap mt-6">
+        <table class="table">
+            <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Entity</th><th>Branch</th><th>Details</th></tr></thead>
+            <tbody class="divide-y divide-line">
+            {% for log in logs %}
+                <tr>
+                    <td class="whitespace-nowrap text-xs muted">{{ log.created_at|date:"j M Y, H:i" }}</td>
+                    <td class="font-semibold text-ink-900">{% if log.actor %}{{ log.actor.username }}{% else %}System{% endif %}</td>
+                    <td><code class="rounded bg-paper-2 px-1.5 py-0.5 text-xs">{{ log.action }}</code></td>
+                    <td class="whitespace-nowrap">{{ log.entity_type }} #{{ log.entity_id }}</td>
+                    <td>{{ log.branch.name|default:"—" }}</td>
+                    <td class="max-w-md text-xs muted">{{ log.details|truncatechars:160 }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6" class="py-10 text-center muted">No log entries found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'include/pagination.html' with page=logs query=filter_query %}
+</section>
 {% endblock %}

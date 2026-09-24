@@ -1,0 +1,16 @@
+{% load static %}
+<li class="relative flex items-center gap-4 px-6 py-4 transition hover:bg-paper/70">
+    <img src="{% if thread.author.profile.profile_picture %}{{ thread.author.profile.profile_picture.url }}{% else %}{% static 'img/default-avatar.svg' %}{% endif %}" alt="" class="avatar size-10 shrink-0">
+    <div class="min-w-0 flex-1">
+        <a href="{{ thread.get_absolute_url }}" class="line-clamp-1 font-semibold text-ink-900 after:absolute after:inset-0 hover:text-ember-600">{{ thread.title }}</a>
+        <p class="mt-0.5 text-xs muted">
+            <a href="{% url 'profile' username=thread.author.username %}" class="relative z-10 hover:text-ink-900">{{ thread.author.username }}</a>
+            · {{ thread.created_at|timesince }} ago
+            {% if thread.last_reply %}· last reply by {{ thread.last_reply.author.username }}{% endif %}
+        </p>
+    </div>
+    <dl class="hidden shrink-0 gap-6 text-center text-xs sm:flex">
+        <div><dt class="muted">Replies</dt><dd class="font-display text-lg font-semibold text-ink-900">{{ thread.reply_count }}</dd></div>
+        <div><dt class="muted">Views</dt><dd class="font-display text-lg font-semibold text-ink-900">{{ thread.views }}</dd></div>
+    </dl>
+</li>

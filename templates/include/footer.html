@@ -1,80 +1,72 @@
- <!-- Footer Start -->
-    <div class="container-fluid bg-dark footer mt-5 py-5 wow fadeIn" data-wow-delay="0.1s">
-        <div class="container py-1">
-            <div class="row g-5">
-                <div class="col-lg-3 col-md-6">
-                    <h5 class="text-white mb-4">Head Office</h5>
-                    <p class="mb-2"><i class="fa fa-map-marker-alt me-3"></i>Damak-8, Jhapa</p>
-                    <p class="mb-2"><i class="fa fa-phone-alt me-3"></i>+977 9801443513</p>
-                    <p class="mb-2"><i class="fa fa-envelope me-3"></i>contact@dpl.org.np</p>
-                    <div class="d-flex pt-3">
-                        <a class="btn btn-square btn-primary rounded-circle me-2" href="https://www.facebook.com/dpllibrary/"><i
-                                class="fab fa-twitter"></i></a>
-                        <a class="btn btn-square btn-primary rounded-circle me-2" href="https://www.facebook.com/dpllibrary/"><i
-                                class="fab fa-facebook-f"></i></a>
-                        <a class="btn btn-square btn-primary rounded-circle me-2" href="https://www.facebook.com/dpllibrary/"><i
-                                class="fab fa-youtube"></i></a>
-                        <a class="btn btn-square btn-primary rounded-circle me-2" href="https://www.facebook.com/dpllibrary/"><i
-                                class="fab fa-linkedin-in"></i></a>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <h5 class="text-white mb-4">Quick Links</h5>
-                    <a class="btn btn-link" href="#">Become a member</a>
-                    <a class="btn btn-link" href="#">Donate</a>
-                    <a class="btn btn-link" href="{% url 'terms_conditions' %}">Terms & Conditions</a>
-                    <a class="btn btn-link" href="{% url 'privacy_policy' %}">Privacy Policy</a>
-                    <a class="btn btn-link" href="{% url 'cookie' %}">Cookie Policy</a>
-                </div>
-
-                <div class="col-lg-3 col-md-6">
-                    <h5 class="text-white mb-4">Opening Hours</h5>
-                    <p class="mb-1">All Day</p>
-                    <h6 class="text-light">06:00 am - 08:00 pm</h6>
-
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <h5 class="text-white mb-4">Newsletter</h5>
-                    <p>Sign up for Newsletter</p>
-                    <div class="position-relative w-100">
-                        <input class="form-control bg-transparent w-100 py-3 ps-4 pe-5" type="text"
-                            placeholder="Your email">
-                        <button type="button"
-                            class="btn btn-primary py-2 position-absolute top-0 end-0 mt-2 me-2">SignUp</button>
-                    </div>
-                </div>
+{% load static %}
+<footer class="mt-24 bg-ink-950 text-white/75">
+    <div class="container-page grid gap-12 py-16 md:grid-cols-2 lg:grid-cols-12">
+        <div class="lg:col-span-4">
+            <a href="{% url 'home' %}" class="flex items-center gap-3">
+                <span class="grid size-12 place-items-center rounded-2xl bg-white"><img src="{% static 'img/logo1.png' %}" alt="" class="h-9 w-auto"></span>
+                <span class="font-display text-xl font-semibold text-white">Dynamic Public Library</span>
+            </a>
+            <p class="mt-5 max-w-sm text-sm leading-relaxed text-white/65">
+                A non-profit network of community libraries across Nepal, building a reading culture since 2011.
+            </p>
+            <div class="mt-6 flex gap-2">
+                <a href="https://www.facebook.com/dpllibrary/" class="grid size-10 place-items-center rounded-full bg-white/5 ring-1 ring-white/10 hover:bg-ember-500" aria-label="Facebook" target="_blank" rel="noopener"><i data-lucide="facebook" class="size-4"></i></a>
+                <a href="https://www.instagram.com/dpllibrary/" class="grid size-10 place-items-center rounded-full bg-white/5 ring-1 ring-white/10 hover:bg-ember-500" aria-label="Instagram" target="_blank" rel="noopener"><i data-lucide="instagram" class="size-4"></i></a>
+                <a href="https://twitter.com/dpllibrary" class="grid size-10 place-items-center rounded-full bg-white/5 ring-1 ring-white/10 hover:bg-ember-500" aria-label="Twitter" target="_blank" rel="noopener"><i data-lucide="twitter" class="size-4"></i></a>
+                <a href="https://www.linkedin.com/company/dpllibrary" class="grid size-10 place-items-center rounded-full bg-white/5 ring-1 ring-white/10 hover:bg-ember-500" aria-label="LinkedIn" target="_blank" rel="noopener"><i data-lucide="linkedin" class="size-4"></i></a>
             </div>
         </div>
-    </div>
-    <!-- Footer End -->
 
+        <div class="lg:col-span-2">
+            <h2 class="font-sans text-sm font-semibold uppercase tracking-wider text-white">Explore</h2>
+            <ul class="mt-4 space-y-2.5 text-sm">
+                <li><a href="{% url 'about' %}" class="hover:text-white">About us</a></li>
+                <li><a href="{% url 'branch_details' %}" class="hover:text-white">Chapters</a></li>
+                <li><a href="{% url 'program_list' %}" class="hover:text-white">Programs</a></li>
+                <li><a href="{% url 'public_project_list' %}" class="hover:text-white">Impact reports</a></li>
+                <li><a href="{% url 'category_list' %}" class="hover:text-white">Discussion forum</a></li>
+            </ul>
+        </div>
 
-    <!-- Copyright Start -->
-    <div class="container-fluid copyright bg-dark py-2">
-        <div class="container text-center">
-            <p class="mb-2">Copyright &copy; <a class="fw-semi-bold" href="{% url 'home' %}">Dynamic Public Library</a>, All Right Reserved.
-            </p>
-            <!--/*** This template is free as long as you keep the footer author’s credit link/attribution link/backlink. If you'd like to use the template without the footer author’s credit link/attribution link/backlink, you can purchase the Credit Removal License from "https://htmlcodex.com/credit-removal". Thank you for your support. ***/-->
-            <p class="mb-0">Designed and Developed By <a class="fw-semi-bold" href="https://www.linkedin.com/in/upretybnd/">Binod Uprety</a></p>
+        <div class="lg:col-span-2">
+            <h2 class="font-sans text-sm font-semibold uppercase tracking-wider text-white">Get involved</h2>
+            <ul class="mt-4 space-y-2.5 text-sm">
+                <li><a href="{% url 'sign_up' %}" class="hover:text-white">Become a member</a></li>
+                <li><a href="{% url 'donate_us' %}" class="hover:text-white">Donate</a></li>
+                <li><a href="{% url 'contact' %}" class="hover:text-white">Contact us</a></li>
+                <li><a href="{% url 'portal' %}" class="inline-flex items-center gap-1.5 hover:text-white"><i data-lucide="lock-keyhole" class="size-3.5"></i> DPL MIS</a></li>
+            </ul>
+        </div>
+
+        <div class="md:col-span-2 lg:col-span-4">
+            <h2 class="font-sans text-sm font-semibold uppercase tracking-wider text-white">Newsletter</h2>
+            <p class="mt-4 text-sm text-white/65">Programs, reading lists and chapter news — once a month.</p>
+            <form method="post" action="{% url 'newsletter_subscribe' %}" class="mt-4 flex gap-2">
+                {% csrf_token %}
+                <input type="text" name="website" tabindex="-1" autocomplete="off" class="absolute -left-[9999px]" aria-hidden="true">
+                <label for="newsletter-email" class="sr-only">Email address</label>
+                <input id="newsletter-email" type="email" name="email" required placeholder="you@example.com"
+                       class="min-w-0 flex-1 rounded-full border-0 bg-white/10 px-4 py-2.5 text-sm text-white ring-1 ring-white/15 placeholder:text-white/40 focus:ring-2 focus:ring-ember-400">
+                <button type="submit" class="btn btn-primary shrink-0">Subscribe</button>
+            </form>
+            <dl class="mt-8 grid gap-3 text-sm">
+                <div class="flex items-center gap-3"><i data-lucide="map-pin" class="size-4 text-ember-400"></i><dt class="sr-only">Head office</dt><dd>Damak-8, Jhapa, Nepal</dd></div>
+                <div class="flex items-center gap-3"><i data-lucide="phone" class="size-4 text-ember-400"></i><dt class="sr-only">Phone</dt><dd><a href="tel:+9779801443513" class="hover:text-white">+977 980-1443513</a></dd></div>
+                <div class="flex items-center gap-3"><i data-lucide="mail" class="size-4 text-ember-400"></i><dt class="sr-only">Email</dt><dd><a href="mailto:contact@dpl.org.np" class="hover:text-white">contact@dpl.org.np</a></dd></div>
+                <div class="flex items-center gap-3"><i data-lucide="clock" class="size-4 text-ember-400"></i><dt class="sr-only">Hours</dt><dd>Open daily, 6:00 AM – 8:00 PM</dd></div>
+            </dl>
         </div>
     </div>
-    <!-- Copyright End -->
 
-
-    <!-- Back to Top -->
-    <a href="#" class="btn btn-lg btn-primary btn-lg-square rounded-circle back-to-top"><i
-            class="bi bi-arrow-up"></i></a>
-
- <style>
-     .footer {
-    padding-top: 1.5rem !important; /* Adjust padding to your preference */
-    padding-bottom: 1.5rem !important;
-}
-
-.copyright {
-    padding-top: 1rem !important;
-    padding-bottom: 1rem !important;
-    margin-top: 0 !important; /* Optional: To remove extra gap above copyright */
-}
-
- </style>
+    <div class="border-t border-white/10">
+        <div class="container-page flex flex-col gap-3 py-6 text-xs text-white/50 sm:flex-row sm:items-center sm:justify-between">
+            <p>&copy; {% now "Y" %} Dynamic Public Library. All rights reserved.</p>
+            <nav class="flex flex-wrap gap-x-5 gap-y-2" aria-label="Legal">
+                <a href="{% url 'terms_conditions' %}" class="hover:text-white">Terms</a>
+                <a href="{% url 'privacy_policy' %}" class="hover:text-white">Privacy</a>
+                <a href="{% url 'cookie' %}" class="hover:text-white">Cookies</a>
+                <span>Designed &amp; developed by <a href="https://www.linkedin.com/in/upretybnd/" class="text-white/70 hover:text-white">Binod Uprety</a></span>
+            </nav>
+        </div>
+    </div>
+</footer>

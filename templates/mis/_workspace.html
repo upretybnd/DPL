@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block seo %}{% include 'include/seo.html' with title=branch.name|add:" · DPL MIS" noindex=True %}{% endblock %}
+
+{% block content %}
+{% include 'reports/_dash_shell.html' with eyebrow="Branch workspace" title=branch.name active="manage" %}
+
+<section class="container-page py-8">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <nav class="flex flex-wrap gap-1 rounded-full bg-paper-2 p-1 text-sm" aria-label="Branch sections">
+            {% url 'mis_branch_profile' branch.branch_id as u_profile %}
+            {% url 'mis_branch_team' branch.branch_id as u_team %}
+            {% url 'mis_branch_gallery' branch.branch_id as u_gallery %}
+            {% url 'mis_branch_programs' branch.branch_id as u_programs %}
+            {% url 'mis_branch_members' branch.branch_id as u_members %}
+            <a href="{% url 'branch_dashboard' %}?branch={{ branch.branch_id }}" class="rounded-full px-4 py-2 font-semibold text-ink-900/65 hover:text-ink-900"><i data-lucide="folder-kanban" class="inline size-4"></i> Reports</a>
+            <a href="{{ u_profile }}" class="rounded-full px-4 py-2 font-semibold {% if tab == 'profile' %}bg-white text-ink-900 shadow-sm{% else %}text-ink-900/65 hover:text-ink-900{% endif %}"><i data-lucide="file-text" class="inline size-4"></i> Page</a>
+            <a href="{{ u_team }}" class="rounded-full px-4 py-2 font-semibold {% if tab == 'team' %}bg-white text-ink-900 shadow-sm{% else %}text-ink-900/65 hover:text-ink-900{% endif %}"><i data-lucide="users" class="inline size-4"></i> Team</a>
+            <a href="{{ u_gallery }}" class="rounded-full px-4 py-2 font-semibold {% if tab == 'gallery' %}bg-white text-ink-900 shadow-sm{% else %}text-ink-900/65 hover:text-ink-900{% endif %}"><i data-lucide="images" class="inline size-4"></i> Gallery</a>
+            <a href="{{ u_programs }}" class="rounded-full px-4 py-2 font-semibold {% if tab == 'programs' %}bg-white text-ink-900 shadow-sm{% else %}text-ink-900/65 hover:text-ink-900{% endif %}"><i data-lucide="calendar-days" class="inline size-4"></i> Programs</a>
+            <a href="{{ u_members }}" class="rounded-full px-4 py-2 font-semibold {% if tab == 'members' %}bg-white text-ink-900 shadow-sm{% else %}text-ink-900/65 hover:text-ink-900{% endif %}"><i data-lucide="key-round" class="inline size-4"></i> Members &amp; access</a>
+        </nav>
+        {% if branch.is_active and branch.slug %}
+            <a href="{{ branch.get_absolute_url }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm"><i data-lucide="external-link" class="size-4"></i> View public page</a>
+        {% endif %}
+    </div>
+
+    <div class="mt-8">
+        {% block workspace %}{% endblock %}
+    </div>
+</section>
+{% endblock %}

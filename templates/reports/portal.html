@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block seo %}{% include 'include/seo.html' with title="DPL MIS" description="DPL Management System — reporting, dashboards and branch administration for Dynamic Public Library staff and volunteers." noindex=True %}{% endblock %}
+
+{% block content %}
+<section class="relative overflow-hidden bg-ink-950 text-white">
+    <div class="pointer-events-none absolute -right-32 -top-32 size-96 rounded-full bg-ember-500/20 blur-3xl"></div>
+    <div class="pointer-events-none absolute -bottom-40 -left-20 size-96 rounded-full bg-ink-400/20 blur-3xl"></div>
+    <div class="container-page relative grid items-center gap-12 py-16 lg:grid-cols-2 lg:py-24">
+        <div class="reveal">
+            <span class="badge bg-white/10 text-white ring-1 ring-white/20"><i data-lucide="lock-keyhole" class="size-3"></i> For DPL staff &amp; volunteers</span>
+            <h1 class="display-xl mt-5 !text-white">DPL Management System</h1>
+            <p class="mt-5 max-w-xl text-lg text-white/75">
+                One place to report projects, track impact across every chapter, manage branch pages and publish results to the public.
+            </p>
+
+            {% if no_access %}
+                <div class="mt-8 max-w-xl rounded-2xl bg-white/10 p-5 ring-1 ring-white/15">
+                    <p class="font-semibold text-white">You're signed in as {{ user.first_name|default:user.username }}, but you don't have a portal role yet.</p>
+                    <p class="mt-1 text-sm text-white/70">Ask your branch admin or the national team to give you access (Reporter, Branch Admin or Viewer).</p>
+                    <a href="{% url 'contact' %}" class="btn btn-primary mt-4">Request access</a>
+                </div>
+            {% else %}
+                <div class="mt-8 flex flex-wrap gap-3">
+                    <a href="{% url 'login' %}?next={% url 'report_home' %}" class="btn btn-primary btn-lg"><i data-lucide="log-in" class="size-4"></i> DPL MIS</a>
+                    <a href="{% url 'contact' %}" class="btn btn-light btn-lg">Request access</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+            <div class="rounded-[var(--radius-card)] bg-white/5 p-6 ring-1 ring-white/10">
+                <i data-lucide="file-pen-line" class="size-6 text-ember-400"></i>
+                <p class="mt-4 font-display text-xl font-semibold">Project reporting</p>
+                <p class="mt-1 text-sm text-white/65">Create reports, upload evidence and submit them for national review.</p>
+            </div>
+            <div class="rounded-[var(--radius-card)] bg-white/5 p-6 ring-1 ring-white/10">
+                <i data-lucide="layout-dashboard" class="size-6 text-ember-400"></i>
+                <p class="mt-4 font-display text-xl font-semibold">Branch dashboards</p>
+                <p class="mt-1 text-sm text-white/65">Projects, people reached and volunteer hours for your chapter, with monthly PDFs.</p>
+            </div>
+            <div class="rounded-[var(--radius-card)] bg-white/5 p-6 ring-1 ring-white/10">
+                <i data-lucide="chart-line" class="size-6 text-ember-400"></i>
+                <p class="mt-4 font-display text-xl font-semibold">National analytics</p>
+                <p class="mt-1 text-sm text-white/65">Trends, branch rankings and SDG coverage across the whole network.</p>
+            </div>
+            <div class="rounded-[var(--radius-card)] bg-white/5 p-6 ring-1 ring-white/10">
+                <i data-lucide="settings-2" class="size-6 text-ember-400"></i>
+                <p class="mt-4 font-display text-xl font-semibold">Site administration</p>
+                <p class="mt-1 text-sm text-white/65">Branch pages, teams, programs, landing images and the About page.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container-page section">
+    <h2 class="display-lg">Who uses the portal</h2>
+    <div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div class="card card-body"><span class="badge badge-ink">National Admin</span><p class="mt-3 text-sm muted">Reviews and approves reports, locks reporting months, sees every branch and the audit log.</p></div>
+        <div class="card card-body"><span class="badge badge-ink">Branch Admin</span><p class="mt-3 text-sm muted">Runs a chapter: manages its page, team and programs, and its project reports.</p></div>
+        <div class="card card-body"><span class="badge badge-ink">Reporter</span><p class="mt-3 text-sm muted">Writes project reports for their branch and uploads photos and documents as evidence.</p></div>
+        <div class="card card-body"><span class="badge badge-ink">Viewer</span><p class="mt-3 text-sm muted">Read-only access to a branch's dashboard and reports.</p></div>
+    </div>
+    <p class="mt-8 text-sm muted">Looking for our public results instead? <a href="{% url 'public_project_list' %}" class="font-semibold text-ember-600">See the impact reports</a>.</p>
+</section>
+{% endblock %}

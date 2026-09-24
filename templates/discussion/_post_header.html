@@ -1,0 +1,14 @@
+{% load static %}
+<header class="flex items-center gap-3 px-6 pt-5 sm:px-7">
+    <a href="{% url 'profile' username=author.username %}" class="shrink-0">
+        <img src="{% if author.profile.profile_picture %}{{ author.profile.profile_picture.url }}{% else %}{% static 'img/default-avatar.svg' %}{% endif %}" alt="" class="avatar size-11">
+    </a>
+    <div class="min-w-0 flex-1">
+        <p class="flex flex-wrap items-center gap-x-2 text-sm">
+            <a href="{% url 'profile' username=author.username %}" class="font-semibold text-ink-900 hover:text-ember-600">{{ author.profile.full_name|default:author.username }}</a>
+            {% with rank=author.profile.rank %}<span class="text-xs font-semibold {{ rank.css }}">{{ rank.label }}</span>{% endwith %}
+            {% if op %}<span class="badge badge-ember">Author</span>{% endif %}
+        </p>
+        <p class="text-xs muted">@{{ author.username }} · <time datetime="{{ created|date:'c' }}">{{ created|date:"j M Y, g:i a" }}</time>{% if updated|date:"U" != created|date:"U" %} · edited{% endif %}</p>
+    </div>
+</header>

@@ -1,0 +1,177 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/forms";
+@plugin "@tailwindcss/typography";
+
+/* Scan Django templates and Python (form widget classes) for utility names */
+@source "../templates";
+@source "../*/**/*.py";
+
+@theme {
+  /* Type: literary serif for display, warm geometric sans for UI, Mukta covers Devanagari */
+  --font-display: "Fraunces", "Mukta", ui-serif, Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", "Mukta", ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand: ember orange from the DPL logo */
+  --color-ember-50: #fff4ed;
+  --color-ember-100: #ffe6d5;
+  --color-ember-200: #fec8aa;
+  --color-ember-300: #fda274;
+  --color-ember-400: #fb7a3c;
+  --color-ember-500: #ff5e14;
+  --color-ember-600: #e84708;
+  --color-ember-700: #c0350a;
+  --color-ember-800: #992c10;
+  --color-ember-900: #7b2710;
+
+  /* Brand: deep ink navy from the DPL logo */
+  --color-ink-50: #eef3fb;
+  --color-ink-100: #d9e3f5;
+  --color-ink-200: #b6c8ea;
+  --color-ink-300: #87a3d9;
+  --color-ink-400: #5577c2;
+  --color-ink-500: #3457a8;
+  --color-ink-600: #25428b;
+  --color-ink-700: #1c3371;
+  --color-ink-800: #102a63;
+  --color-ink-900: #02245b;
+  --color-ink-950: #01163a;
+
+  /* Paper: warm neutrals so pages feel like a reading room, not a dashboard */
+  --color-paper: #fbf8f3;
+  --color-paper-2: #f4efe6;
+  --color-line: #e7e0d4;
+
+  --radius-card: 1.25rem;
+  --shadow-soft: 0 1px 2px rgb(2 36 91 / 0.04), 0 8px 24px -8px rgb(2 36 91 / 0.10);
+  --shadow-lift: 0 2px 4px rgb(2 36 91 / 0.05), 0 18px 40px -12px rgb(2 36 91 / 0.18);
+
+  --animate-fade-up: fade-up 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-paper font-sans text-ink-900/85 text-[15.5px] leading-relaxed;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display text-ink-900 tracking-tight;
+    font-optical-sizing: auto;
+    font-variation-settings: "SOFT" 30;
+  }
+  a { @apply transition-colors; }
+  ::selection { @apply bg-ember-200 text-ink-900; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-ember-500; }
+  [x-cloak] { display: none !important; }
+}
+
+@layer components {
+  .container-page { @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8; }
+  .section { @apply py-16 sm:py-24; }
+  .eyebrow { @apply inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-ember-600; }
+  .eyebrow::before { content: ""; @apply h-px w-6 bg-ember-500; }
+  .display-xl { @apply font-display text-4xl leading-[1.05] font-semibold sm:text-5xl lg:text-6xl; }
+  .display-lg { @apply font-display text-3xl leading-tight font-semibold sm:text-4xl; }
+  .display-md { @apply font-display text-2xl leading-snug font-semibold sm:text-3xl; }
+  .lead { @apply text-lg leading-relaxed text-ink-900/70; }
+  .muted { @apply text-ink-900/60; }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-semibold
+      transition duration-200 disabled:pointer-events-none disabled:opacity-50 cursor-pointer;
+  }
+  .btn-lg { @apply px-7 py-3.5 text-base; }
+  .btn-sm { @apply px-3.5 py-1.5 text-xs; }
+  .btn-primary { @apply bg-ember-500 text-white shadow-sm hover:bg-ember-600 active:bg-ember-700; }
+  .btn-dark { @apply bg-ink-900 text-white hover:bg-ink-800; }
+  .btn-outline { @apply border border-ink-900/15 bg-white text-ink-900 hover:border-ink-900/30 hover:bg-paper-2; }
+  .btn-ghost { @apply text-ink-900 hover:bg-ink-900/5; }
+  .btn-danger { @apply border border-red-200 bg-white text-red-700 hover:bg-red-50; }
+  .btn-light { @apply bg-white/10 text-white ring-1 ring-white/25 backdrop-blur hover:bg-white/20; }
+
+  /* Surfaces */
+  .card { @apply rounded-[var(--radius-card)] border border-line bg-white shadow-[var(--shadow-soft)]; }
+  .card-hover { @apply transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lift)]; }
+  .card-body { @apply p-6 sm:p-7; }
+  .panel { @apply rounded-[var(--radius-card)] bg-paper-2 p-6 sm:p-8; }
+
+  /* Forms */
+  .label { @apply mb-1.5 block text-sm font-semibold text-ink-900; }
+  .input, .form-control, .form-select {
+    @apply block w-full rounded-xl border-line bg-white px-4 py-2.5 text-[15px] text-ink-900 shadow-sm
+      placeholder:text-ink-900/40 focus:border-ember-400 focus:ring-4 focus:ring-ember-100;
+  }
+  textarea.input, textarea.form-control { @apply min-h-32; }
+  .help { @apply mt-1.5 text-xs text-ink-900/55; }
+  .field-error { @apply mt-1.5 text-sm text-red-700; }
+  .checkbox { @apply size-4 rounded border-line text-ember-500 focus:ring-ember-200; }
+
+  /* Badges and status */
+  .badge { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold; }
+  .badge-soft { @apply bg-paper-2 text-ink-900/75; }
+  .badge-ember { @apply bg-ember-50 text-ember-700 ring-1 ring-ember-200; }
+  .badge-ink { @apply bg-ink-50 text-ink-700 ring-1 ring-ink-100; }
+  .status-draft { @apply bg-slate-100 text-slate-700; }
+  .status-submitted { @apply bg-amber-50 text-amber-800 ring-1 ring-amber-200; }
+  .status-reviewed { @apply bg-sky-50 text-sky-800 ring-1 ring-sky-200; }
+  .status-approved { @apply bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200; }
+  .status-rejected { @apply bg-red-50 text-red-800 ring-1 ring-red-200; }
+
+  /* Alerts (Django message tags) */
+  .alert { @apply flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm; }
+  .alert-success { @apply border-emerald-200 bg-emerald-50 text-emerald-900; }
+  .alert-error, .alert-danger { @apply border-red-200 bg-red-50 text-red-900; }
+  .alert-warning { @apply border-amber-200 bg-amber-50 text-amber-900; }
+  .alert-info, .alert-debug { @apply border-ink-100 bg-ink-50 text-ink-900; }
+
+  /* Tables */
+  .table-wrap { @apply overflow-x-auto rounded-2xl border border-line bg-white; }
+  .table { @apply min-w-full divide-y divide-line text-sm; }
+  .table th { @apply bg-paper-2/60 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ink-900/60; }
+  .table td { @apply px-4 py-3 align-top; }
+  .table tbody tr { @apply hover:bg-paper/70; }
+
+  /* Navigation */
+  .nav-link { @apply rounded-full px-3.5 py-2 text-sm font-medium text-ink-900/75 hover:bg-ink-900/5 hover:text-ink-900; }
+  .nav-link-active { @apply bg-ink-900/5 text-ink-900; }
+  .menu { @apply absolute z-40 mt-2 w-64 rounded-2xl border border-line bg-white p-2 shadow-[var(--shadow-lift)]; }
+  .menu-item { @apply block rounded-xl px-3 py-2 text-sm text-ink-900/80 hover:bg-paper-2 hover:text-ink-900; }
+
+  /* Pagination */
+  .pager { @apply flex flex-wrap items-center justify-center gap-2 pt-10 text-sm; }
+  .pager a, .pager span { @apply rounded-full px-4 py-2; }
+  .pager a { @apply border border-line bg-white hover:bg-paper-2; }
+  .pager .current { @apply bg-ink-900 text-white; }
+
+  /* Media */
+  .img-cover { @apply size-full object-cover; }
+  .avatar { @apply rounded-full object-cover ring-2 ring-white; }
+
+  /* Stats */
+  .stat { @apply font-display text-4xl font-semibold text-ink-900 sm:text-5xl; }
+
+  /* Long-form text pages (about, policies, descriptions) */
+  .prose-dpl {
+    @apply prose prose-lg max-w-none prose-headings:font-display prose-headings:text-ink-900
+      prose-a:text-ember-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-ink-900
+      prose-p:text-ink-900/80 prose-li:text-ink-900/80;
+  }
+}
+
+@layer utilities {
+  .bg-grain {
+    background-image:
+      radial-gradient(circle at 20% 0%, rgb(255 94 20 / 0.10), transparent 45%),
+      radial-gradient(circle at 90% 20%, rgb(2 36 91 / 0.08), transparent 40%);
+  }
+  .text-balance { text-wrap: balance; }
+  .reveal { @apply motion-safe:animate-fade-up; }
+}

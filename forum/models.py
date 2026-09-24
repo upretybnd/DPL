@@ -14,7 +14,7 @@ class Category(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        return reverse("category_threads", kwargs={"slug": self.slug})
+        return reverse("category_threads", kwargs={"category_id": self.pk})
 
 
 class Thread(models.Model):
@@ -87,41 +87,28 @@ class UserProfile(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
-    def get_title_based_on_post_count(self):
-        """Returns the title based on the post count from UserPostCount."""
-        # Fetch the post count from UserPostCount
-        try:
-            post_count = self.user.userpostcount.total_count
-        except UserPostCount.DoesNotExist:
-            post_count = 0  # Default to 0 if no UserPostCount record exists
+    RANKS = [
+        (0, 10, 'Newbie', 'text-muted'),
+        (11, 50, 'Beginner', 'text-primary'),
+        (51, 100, 'Intermediate', 'text-info'),
+        (101, 200, 'Senior Member', 'text-success'),
+        (201, 500, 'Advanced', 'text-warning'),
+        (501, 1000, 'Expert', 'text-danger'),
+        (1001, 2000, 'Dazzler', 'text-dark'),
+        (2001, 5000, 'Viewbie', 'text-secondary'),
+        (5001, 10000, 'Master', 'text-secondary'),
+        (10001, 20000, 'Grandmaster', 'text-success'),
+    ]
 
-        # Check if the user is a superuser
+    def rank(self):
+        """Forum rank as plain data ({'label', 'css'}); templates render it, so nothing needs |safe."""
         if self.user.is_superuser:
-            return '<span class="text-danger">Admin</span>'
-
-        titles = [
-            ((0, 10), 'Newbie', 'text-muted'),
-            ((11, 50), 'Beginner', 'text-primary'),
-            ((51, 100), 'Intermediate', 'text-info'),
-            ((101, 200), 'Senior Member', 'text-success'),
-            ((201, 500), 'Advanced', 'text-warning'),
-            ((501, 1000), 'Expert', 'text-danger'),
-            ((1001, 2000), 'Dazzler', 'text-dark'),
-            ((2001, 5000), 'Viewbie', 'text-light'),
-            ((5001, 10000), 'Master', 'text-secondary'),
-            ((10001, 20000), 'Grandmaster', 'text-success'),
-        ]
-
-        for (min_count, max_count), title, color in titles:
+            return {'label': 'Admin', 'css': 'text-danger'}
+        post_count = UserPostCount.objects.filter(user=self.user).values_list('total_count', flat=True).first() or 0
+        for min_count, max_count, label, css in self.RANKS:
             if min_count <= post_count <= max_count:
-                return f'<span class="{color}">{title}</span>'
-
-        return 'Member'  # Default title
-
-    def update_custom_title(self):
-        """Updates the custom title based on the UserPostCount."""
-        self.custom_title = self.get_title_based_on_post_count()
-        self.save()
+                return {'label': label, 'css': css}
+        return {'label': 'Member', 'css': 'text-muted'}
 
 
 # Wall Posts (Optional Feature for User Profiles)

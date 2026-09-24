@@ -1,0 +1,23 @@
+[Unit]
+Description=Dynamic Public Library (Django via Gunicorn)
+After=network.target postgresql.service
+
+[Service]
+User=dpl
+Group=dpl
+WorkingDirectory=/srv/dpl/app
+EnvironmentFile=/srv/dpl/app/.env
+ExecStart=/srv/dpl/venv/bin/gunicorn dpl.wsgi:application \
+    --bind unix:/srv/dpl/run/gunicorn.sock \
+    --workers 5 --threads 2 --timeout 60 \
+    --access-logfile /srv/dpl/logs/access.log \
+    --error-logfile /srv/dpl/logs/error.log
+Restart=on-failure
+RestartSec=5
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,30 @@
+{% comment %}Dashboard header + sub-navigation. Args: eyebrow, title, active{% endcomment %}
+<section class="border-b border-line bg-white">
+    <div class="container-page pt-8">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+                <p class="eyebrow">{{ eyebrow }}</p>
+                <h1 class="display-lg mt-3">{{ title }}</h1>
+            </div>
+            <a href="{% url 'project_create' %}" class="btn btn-primary"><i data-lucide="plus" class="size-4"></i> New project report</a>
+        </div>
+        <nav class="-mb-px mt-6 flex gap-1 overflow-x-auto text-sm" aria-label="Dashboard">
+            {% if is_national_admin %}
+                <a href="{% url 'national_dashboard' %}" class="whitespace-nowrap border-b-2 px-3 pb-3 font-semibold {% if active == 'national' %}border-ember-500 text-ink-900{% else %}border-transparent text-ink-900/60 hover:text-ink-900{% endif %}">National overview</a>
+                <a href="{% url 'national_analytics' %}" class="whitespace-nowrap border-b-2 px-3 pb-3 font-semibold {% if active == 'analytics' %}border-ember-500 text-ink-900{% else %}border-transparent text-ink-900/60 hover:text-ink-900{% endif %}">Analytics</a>
+            {% endif %}
+            <a href="{% url 'branch_dashboard' %}" class="whitespace-nowrap border-b-2 px-3 pb-3 font-semibold {% if active == 'branch' %}border-ember-500 text-ink-900{% else %}border-transparent text-ink-900/60 hover:text-ink-900{% endif %}">Branch reports</a>
+            {% if is_branch_admin %}
+                <a href="{% url 'mis_branches' %}" class="whitespace-nowrap border-b-2 px-3 pb-3 font-semibold {% if active == 'manage' %}border-ember-500 text-ink-900{% else %}border-transparent text-ink-900/60 hover:text-ink-900{% endif %}">{% if is_national_admin %}Manage branches{% else %}My branch{% endif %}</a>
+            {% endif %}
+            {% if is_national_admin %}
+                <a href="{% url 'mis_national_admins' %}" class="whitespace-nowrap border-b-2 px-3 pb-3 font-semibold {% if active == 'national_admins' %}border-ember-500 text-ink-900{% else %}border-transparent text-ink-900/60 hover:text-ink-900{% endif %}">National admins</a>
+            {% endif %}
+            {% if is_national_admin %}
+                <a href="{% url 'audit_log_list' %}" class="whitespace-nowrap border-b-2 px-3 pb-3 font-semibold {% if active == 'audit' %}border-ember-500 text-ink-900{% else %}border-transparent text-ink-900/60 hover:text-ink-900{% endif %}">Audit log</a>
+            {% endif %}
+            <a href="{% url 'my_notifications' %}" class="whitespace-nowrap border-b-2 px-3 pb-3 font-semibold {% if active == 'notifications' %}border-ember-500 text-ink-900{% else %}border-transparent text-ink-900/60 hover:text-ink-900{% endif %}">Notifications{% if unread_notification_count %} <span class="badge badge-ember ml-1">{{ unread_notification_count }}</span>{% endif %}</a>
+            <a href="{% url 'public_project_list' %}" class="whitespace-nowrap border-b-2 border-transparent px-3 pb-3 font-semibold text-ink-900/60 hover:text-ink-900">Public pages <i data-lucide="external-link" class="inline size-3.5"></i></a>
+        </nav>
+    </div>
+</section>

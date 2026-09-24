@@ -1,0 +1,22 @@
+{% load static %}
+<article class="card card-hover group relative overflow-hidden">
+    <div class="aspect-[16/10] overflow-hidden bg-paper-2">
+        <img src="{% if chapter.main_image %}{{ chapter.main_image.url }}{% else %}{{ default_cover_url }}{% endif %}"
+             alt="{{ chapter.name }}" loading="lazy" class="img-cover transition duration-500 group-hover:scale-105">
+    </div>
+    <div class="card-body">
+        <div class="flex items-center gap-2 text-xs muted">
+            <i data-lucide="map-pin" class="size-3.5 text-ember-500"></i>
+            {{ chapter.district|default:"Nepal" }}{% if chapter.province %} · {{ chapter.get_province_display }}{% endif %}
+        </div>
+        <h3 class="mt-2 text-xl font-semibold">
+            <a href="{{ chapter.get_absolute_url }}" class="after:absolute after:inset-0">{{ chapter.name }}</a>
+        </h3>
+        {% if chapter.tagline %}<p class="mt-2 line-clamp-2 text-sm muted">{{ chapter.tagline }}</p>{% endif %}
+        <div class="mt-4 flex flex-wrap gap-2">
+            {% if chapter.established_date %}<span class="badge badge-soft">Since {{ chapter.established_date|date:"Y" }}</span>{% endif %}
+            {% if chapter.program_total is not None %}<span class="badge badge-soft">{{ chapter.program_total }} program{{ chapter.program_total|pluralize }}</span>{% endif %}
+            {% for wing in chapter.wings.all %}<span class="badge badge-ember">+ {{ wing.get_branch_type_display }}</span>{% endfor %}
+        </div>
+    </div>
+</article>

@@ -1,125 +1,161 @@
 {% extends 'base.html' %}
+{% block seo %}{% include 'include/seo.html' with title=project.title noindex=True %}{% endblock %}
+
 {% block content %}
-<div class="container-xxl py-5 reports-shell">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
-            <div>
-                <p class="text-uppercase text-primary mb-1">{{ project.branch.name }}</p>
-                <h2 class="mb-1">{{ project.title }}</h2>
-                <span class="status-badge status-{{ project.status }}">{{ project.get_status_display }}</span>
+<section class="border-b border-line bg-white">
+    <div class="container-page py-8">
+        <nav class="text-sm muted" aria-label="Breadcrumb"><a href="{% url 'report_home' %}" class="hover:text-ink-900">Dashboard</a> / <span class="text-ink-900">{{ project.branch.name }}</span></nav>
+        <div class="mt-4 flex flex-wrap items-start justify-between gap-4">
+            <div class="max-w-3xl">
+                <span class="badge status-{{ project.status }}">{{ project.get_status_display }}</span>
+                {% if project.is_published %}<span class="badge badge-ink ml-1"><i data-lucide="globe" class="size-3"></i> Public</span>{% endif %}
+                <h1 class="display-lg mt-3">{{ project.title }}</h1>
+                <p class="mt-2 text-sm muted">{{ project.branch.name }} · {{ project.project_type }} · {{ project.event_date|date:"j F Y" }}{% if project.created_by %} · by {{ project.created_by.username }}{% endif %}</p>
             </div>
-            <div class="d-flex gap-2">
-                <a class="btn btn-outline-primary" href="{% url 'project_export_pdf' project.id %}">Export PDF</a>
-                {% if can_manage and project.status == 'draft' or can_manage and project.status == 'rejected' %}
-                <a class="btn btn-primary" href="{% url 'project_submit' project.id %}">Submit for Review</a>
-                {% endif %}
-            </div>
-        </div>
-
-        <div class="row g-4">
-            <div class="col-lg-8">
-                <div class="report-form-card mb-3">
-                    <h5>Impact Summary</h5>
-                    <p>{{ project.impact_summary }}</p>
-                    <div class="row g-3">
-                        <div class="col-md-4"><strong>Type:</strong> {{ project.project_type }}</div>
-                        <div class="col-md-4"><strong>Date:</strong> {{ project.event_date }}</div>
-                        <div class="col-md-4"><strong>Location:</strong> {{ project.location }}</div>
-                        <div class="col-md-4"><strong>Beneficiaries:</strong> {{ project.beneficiaries_count }}</div>
-                        <div class="col-md-4"><strong>Volunteer Hours:</strong> {{ project.volunteer_hours }}</div>
-                        <div class="col-md-4"><strong>Budget:</strong> {{ project.budget_actual }} / {{ project.budget_planned }}</div>
-                    </div>
-                </div>
-
-                <div class="report-form-card mb-3">
-                    <h5>Review Comments</h5>
-                    <form method="post" class="mb-3">
+            <div class="flex flex-wrap gap-2">
+                <a class="btn btn-outline" href="{% url 'project_export_pdf' project.id %}"><i data-lucide="file-down" class="size-4"></i> PDF</a>
+                {% if project.is_published %}<a class="btn btn-outline" href="{% url 'public_project_detail' project.id %}"><i data-lucide="external-link" class="size-4"></i> Public page</a>{% endif %}
+                {% if can_manage %}{% if project.status == 'draft' or project.status == 'rejected' %}
+                    <a class="btn btn-outline" href="{% url 'project_edit' project.id %}"><i data-lucide="pencil" class="size-4"></i> Edit</a>
+                    {% if project.status == 'draft' %}
+                    <form method="post" action="{% url 'project_delete' project.id %}" onsubmit="return confirm('Delete this draft report? This cannot be undone.');">
                         {% csrf_token %}
-                        <input type="hidden" name="form_type" value="comment">
-                        {{ comment_form.comment }}
-                        <div class="form-check mt-2">
-                            {{ comment_form.is_internal }}
-                            <label class="form-check-label" for="id_is_internal">Internal note</label>
-                        </div>
-                        <button class="btn btn-primary mt-2" type="submit">Add Comment</button>
+                        <button class="btn btn-danger" type="submit"><i data-lucide="trash-2" class="size-4"></i> Delete</button>
                     </form>
-                    {% for comment in comments %}
-                        <div class="border rounded p-2 mb-2">
-                            <small class="text-secondary">{{ comment.author }} | {{ comment.created_at }}</small>
-                            <p class="mb-0">{{ comment.comment }}</p>
-                        </div>
-                    {% empty %}
-                        <p class="mb-0">No comments yet.</p>
-                    {% endfor %}
-                </div>
-
-                {% if can_manage %}
-                <div class="report-form-card mb-3">
-                    <h5>Evidence Upload</h5>
-                    <form method="post" enctype="multipart/form-data">
+                    {% endif %}
+                    <form method="post" action="{% url 'project_submit' project.id %}">
                         {% csrf_token %}
-                        <input type="hidden" name="form_type" value="evidence">
-                        <div class="row g-2">
-                            <div class="col-md-4">{{ evidence_form.evidence_type }}</div>
-                            <div class="col-md-8">{{ evidence_form.title }}</div>
-                            <div class="col-md-6">{{ evidence_form.file }}</div>
-                            <div class="col-md-6">{{ evidence_form.external_url }}</div>
-                        </div>
-                        <button class="btn btn-primary mt-2" type="submit">Add Evidence</button>
+                        <button class="btn btn-primary" type="submit"><i data-lucide="send" class="size-4"></i> Submit for review</button>
                     </form>
-                    <hr>
-                    {% for evidence in evidences %}
-                        <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
-                            <div>
-                                <small class="text-secondary">{{ evidence.get_evidence_type_display }}</small>
-                                <div>{{ evidence.title }}</div>
-                            </div>
-                            <a class="btn btn-sm btn-outline-danger" href="{% url 'evidence_delete' evidence.id %}">Delete</a>
-                        </div>
-                    {% empty %}
-                        <p class="mb-0">No evidence uploaded yet.</p>
-                    {% endfor %}
-                </div>
-                {% endif %}
-            </div>
-
-            <div class="col-lg-4">
-                <div class="report-form-card">
-                    <h5>Status Timeline</h5>
-                    <ul class="list-unstyled mb-0">
-                        {% for item in history %}
-                            <li class="mb-2">
-                                <small class="text-secondary">{{ item.changed_at }}</small>
-                                <div>{{ item.get_from_status_display }} -> {{ item.get_to_status_display }}</div>
-                                <small>{{ item.changed_by }}{% if item.note %} | {{ item.note }}{% endif %}</small>
-                            </li>
-                        {% empty %}
-                            <li>No status changes yet.</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                {% if can_review %}
-                <div class="report-form-card mt-3">
-                    <h5>Review Actions</h5>
-                    <form method="post" action="{% url 'project_review_action' project.id 'review' %}" class="mb-2">
-                        {% csrf_token %}
-                        {{ review_form.note }}
-                        <button class="btn btn-outline-primary mt-2 w-100" type="submit">Mark Reviewed</button>
-                    </form>
-                    <form method="post" action="{% url 'project_review_action' project.id 'approve' %}" class="mb-2">
-                        {% csrf_token %}
-                        {{ review_form.note }}
-                        <button class="btn btn-success mt-2 w-100" type="submit">Approve</button>
-                    </form>
-                    <form method="post" action="{% url 'project_review_action' project.id 'reject' %}">
-                        {% csrf_token %}
-                        {{ review_form.note }}
-                        <button class="btn btn-outline-danger mt-2 w-100" type="submit">Reject</button>
-                    </form>
-                </div>
-                {% endif %}
+                {% endif %}{% endif %}
             </div>
         </div>
     </div>
-</div>
+</section>
+
+<section class="container-page py-10">
+    <div class="grid gap-8 lg:grid-cols-3">
+        <div class="space-y-6 lg:col-span-2">
+            <div class="card card-body">
+                <h2 class="display-md">Impact summary</h2>
+                <p class="mt-3 whitespace-pre-line">{{ project.impact_summary }}</p>
+                <dl class="mt-6 grid grid-cols-2 gap-4 border-t border-line pt-6 sm:grid-cols-3">
+                    <div><dt class="text-xs muted">People reached</dt><dd class="font-display text-2xl font-semibold text-ink-900">{{ project.beneficiaries_count }}</dd></div>
+                    <div><dt class="text-xs muted">Volunteer hours</dt><dd class="font-display text-2xl font-semibold text-ink-900">{{ project.volunteer_hours }}</dd></div>
+                    <div><dt class="text-xs muted">Budget used / planned</dt><dd class="font-display text-2xl font-semibold text-ink-900">{{ project.budget_actual|floatformat:0 }} <span class="text-base muted">/ {{ project.budget_planned|floatformat:0 }}</span></dd></div>
+                    {% if project.location %}<div><dt class="text-xs muted">Location</dt><dd class="font-semibold text-ink-900">{{ project.location }}</dd></div>{% endif %}
+                    {% if project.sdg_tags %}<div class="col-span-2"><dt class="text-xs muted">SDGs</dt><dd class="mt-1 flex flex-wrap gap-1">{% for tag in project.sdg_list %}<span class="badge badge-ember">{{ tag }}</span>{% endfor %}</dd></div>{% endif %}
+                </dl>
+            </div>
+
+            {% if report %}
+            <div class="card card-body">
+                <h2 class="display-md">Report · {{ report.report_period }}</h2>
+                <dl class="mt-4 grid gap-5 sm:grid-cols-2">
+                    <div><dt class="text-xs font-semibold uppercase tracking-wider muted">Objectives</dt><dd class="mt-1 whitespace-pre-line text-sm">{{ report.objectives|default:"—" }}</dd></div>
+                    <div><dt class="text-xs font-semibold uppercase tracking-wider muted">Outcomes</dt><dd class="mt-1 whitespace-pre-line text-sm">{{ report.outcomes|default:"—" }}</dd></div>
+                    <div><dt class="text-xs font-semibold uppercase tracking-wider muted">Challenges</dt><dd class="mt-1 whitespace-pre-line text-sm">{{ report.challenges|default:"—" }}</dd></div>
+                    <div><dt class="text-xs font-semibold uppercase tracking-wider muted">Lessons learned</dt><dd class="mt-1 whitespace-pre-line text-sm">{{ report.lessons_learned|default:"—" }}</dd></div>
+                    {% if report.partner_organizations %}<div class="sm:col-span-2"><dt class="text-xs font-semibold uppercase tracking-wider muted">Partners</dt><dd class="mt-1 text-sm">{{ report.partner_organizations }}</dd></div>{% endif %}
+                </dl>
+            </div>
+            {% endif %}
+
+            <div class="card card-body">
+                <h2 class="display-md">Evidence</h2>
+                <ul class="mt-4 divide-y divide-line">
+                    {% for evidence in evidences %}
+                        <li class="flex items-center justify-between gap-4 py-3">
+                            <span class="flex items-center gap-3">
+                                <span class="grid size-9 place-items-center rounded-xl bg-paper-2 text-ink-900/60"><i data-lucide="{% if evidence.evidence_type == 'photo' %}image{% elif evidence.evidence_type == 'video' %}video{% else %}file-text{% endif %}" class="size-4"></i></span>
+                                <span>
+                                    <span class="block text-sm font-semibold text-ink-900">{% if evidence.file %}<a href="{{ evidence.file.url }}" target="_blank" rel="noopener" class="hover:text-ember-600">{{ evidence.title }}</a>{% elif evidence.external_url %}<a href="{{ evidence.external_url }}" target="_blank" rel="noopener noreferrer" class="hover:text-ember-600">{{ evidence.title }}</a>{% else %}{{ evidence.title }}{% endif %}</span>
+                                    <span class="text-xs muted">{{ evidence.get_evidence_type_display }}</span>
+                                </span>
+                            </span>
+                            {% if can_manage %}
+                                <form method="post" action="{% url 'evidence_delete' evidence.id %}" onsubmit="return confirm('Delete this evidence?');">
+                                    {% csrf_token %}
+                                    <button class="btn btn-danger btn-sm" type="submit" aria-label="Delete {{ evidence.title }}"><i data-lucide="trash-2" class="size-4"></i></button>
+                                </form>
+                            {% endif %}
+                        </li>
+                    {% empty %}
+                        <li class="py-3 text-sm muted">No evidence uploaded yet.</li>
+                    {% endfor %}
+                </ul>
+                {% if can_manage %}
+                    <form method="post" enctype="multipart/form-data" class="mt-6 grid gap-4 border-t border-line pt-6 sm:grid-cols-2" novalidate>
+                        {% csrf_token %}
+                        <input type="hidden" name="form_type" value="evidence">
+                        {% include 'include/field.html' with field=evidence_form.evidence_type label="Type" %}
+                        {% include 'include/field.html' with field=evidence_form.title %}
+                        {% include 'include/field.html' with field=evidence_form.file label="File" %}
+                        {% include 'include/field.html' with field=evidence_form.external_url label="…or a link" placeholder="https://" %}
+                        {% for error in evidence_form.non_field_errors %}<p class="field-error sm:col-span-2">{{ error }}</p>{% endfor %}
+                        <div class="sm:col-span-2"><button class="btn btn-dark" type="submit"><i data-lucide="upload" class="size-4"></i> Add evidence</button></div>
+                    </form>
+                {% endif %}
+            </div>
+
+            <div class="card card-body">
+                <h2 class="display-md">Comments</h2>
+                <form method="post" class="mt-4 space-y-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="comment">
+                    {% include 'include/field.html' with field=comment_form.comment label="Add a comment" %}
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        {% include 'include/field.html' with field=comment_form.is_internal label="Internal note (hidden from public)" %}
+                        <button class="btn btn-dark btn-sm" type="submit">Post comment</button>
+                    </div>
+                </form>
+                <ul class="mt-6 space-y-3">
+                    {% for comment in comments %}
+                        <li class="rounded-2xl bg-paper-2/60 p-4">
+                            <p class="flex flex-wrap items-center gap-2 text-xs muted"><b class="text-ink-900">{{ comment.author|default:"Former user" }}</b> · {{ comment.created_at|date:"j M Y, g:i a" }}{% if comment.is_internal %} <span class="badge badge-soft">Internal</span>{% endif %}</p>
+                            <p class="mt-1 whitespace-pre-line text-sm">{{ comment.comment }}</p>
+                        </li>
+                    {% empty %}
+                        <li class="text-sm muted">No comments yet.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <aside class="space-y-6">
+            {% if can_review and review_actions %}
+            <div class="card card-body" x-data="{ note: '' }">
+                <h2 class="display-md">Review</h2>
+                <label for="review-note" class="label mt-4">Note to the reporter</label>
+                <textarea id="review-note" x-model="note" rows="3" class="input" placeholder="Optional feedback"></textarea>
+                <div class="mt-4 grid gap-2">
+                    {% for action, label, style in review_actions %}
+                        <form method="post" action="{% url 'project_review_action' project.id action %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="note" :value="note">
+                            <button class="btn {{ style }} w-full" type="submit">{{ label }}</button>
+                        </form>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="card card-body">
+                <h2 class="display-md">Timeline</h2>
+                <ol class="relative mt-5 space-y-5 border-l border-line pl-5">
+                    {% for item in history %}
+                        <li class="relative">
+                            <span class="absolute -left-[26px] top-1 size-3 rounded-full bg-ember-500 ring-4 ring-white"></span>
+                            <p class="text-sm font-semibold text-ink-900">{{ item.get_from_status_display }} → {{ item.get_to_status_display }}</p>
+                            <p class="text-xs muted">{{ item.changed_at|date:"j M Y, g:i a" }}{% if item.changed_by %} · {{ item.changed_by }}{% endif %}</p>
+                            {% if item.note %}<p class="mt-1 text-sm">{{ item.note }}</p>{% endif %}
+                        </li>
+                    {% empty %}
+                        <li class="text-sm muted">No status changes yet.</li>
+                    {% endfor %}
+                </ol>
+            </div>
+        </aside>
+    </div>
+</section>
 {% endblock %}

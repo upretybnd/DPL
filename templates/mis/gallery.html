@@ -1,0 +1,33 @@
+{% extends 'mis/_workspace.html' %}
+{% block workspace %}
+<div class="grid gap-8 lg:grid-cols-3">
+    <div class="lg:col-span-2">
+        <h2 class="display-md">Gallery <span class="text-base font-normal muted">({{ photos|length }})</span></h2>
+        <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
+            {% for photo in photos %}
+                <figure class="card overflow-hidden">
+                    <img src="{{ photo.image.url }}" alt="{{ photo.caption }}" class="aspect-square w-full object-cover" loading="lazy">
+                    <figcaption class="flex items-center justify-between gap-2 p-3">
+                        <span class="line-clamp-1 text-xs muted">{{ photo.caption|default:"No caption" }}</span>
+                        <form method="post" action="{% url 'mis_gallery_delete' branch.branch_id photo.id %}" onsubmit="return confirm('Remove this photo?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-ghost btn-sm !px-2 !text-red-700" aria-label="Remove photo"><i data-lucide="trash-2" class="size-4"></i></button>
+                        </form>
+                    </figcaption>
+                </figure>
+            {% empty %}
+                {% include 'include/empty_state.html' with icon="images" title="No photos yet" text="Upload photos of your library, events and members." %}
+            {% endfor %}
+        </div>
+    </div>
+    <form method="post" enctype="multipart/form-data" class="card card-body h-fit" novalidate>
+        {% csrf_token %}
+        <h2 class="display-md">Upload a photo</h2>
+        <div class="mt-5 space-y-4">
+            {% include 'include/field.html' with field=form.image label="Photo" %}
+            {% include 'include/field.html' with field=form.caption placeholder="What's happening in this photo?" %}
+        </div>
+        <button type="submit" class="btn btn-primary mt-6 w-full"><i data-lucide="upload" class="size-4"></i> Upload</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,4 +1,5 @@
 from django import forms
+from accounts.forms import IMAGE_EXTENSIONS, validate_upload
 from .models import Thread, Reply, UserProfile
 
 
@@ -21,10 +22,5 @@ class UserProfileForm(forms.ModelForm):
         model = UserProfile
         fields = ['full_name','bio', 'profile_picture', 'gender', 'address', 'wall']
 
-    def clean_wall(self):
-        # You can add validation for the wall if necessary
-        return self.cleaned_data.get('wall')
-
-    def clean_address(self):
-        # You can add validation for the address if necessary
-        return self.cleaned_data.get('address')
+    def clean_profile_picture(self):
+        return validate_upload(self.cleaned_data.get('profile_picture'), IMAGE_EXTENSIONS)

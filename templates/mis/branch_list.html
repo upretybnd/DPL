@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block seo %}{% include 'include/seo.html' with title="Manage branches · DPL MIS" noindex=True %}{% endblock %}
+
+{% block content %}
+{% include 'reports/_dash_shell.html' with eyebrow="Branch management" title="Branches" active="manage" %}
+
+<section class="container-page py-10">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <p class="text-sm muted">{{ branches|length }} branch{{ branches|length|pluralize:"es" }} you can manage</p>
+        {% if is_national %}<a href="{% url 'mis_branch_create' %}" class="btn btn-primary"><i data-lucide="plus" class="size-4"></i> New branch</a>{% endif %}
+    </div>
+    <div class="table-wrap mt-4">
+        <table class="table">
+            <thead><tr><th>Branch</th><th>Type</th><th class="text-right">People with access</th><th class="text-right">Programs</th><th>Status</th><th class="sr-only">Manage</th></tr></thead>
+            <tbody class="divide-y divide-line">
+            {% for item in branches %}
+                <tr>
+                    <td><a href="{% url 'mis_branch_profile' item.branch_id %}" class="font-semibold text-ink-900 hover:text-ember-600">{{ item.name }}</a>{% if item.parent %}<p class="text-xs muted">Wing of {{ item.parent.name }}</p>{% endif %}</td>
+                    <td><span class="badge badge-soft">{{ item.get_branch_type_display }}</span></td>
+                    <td class="text-right tabular-nums">{{ item.member_total }}</td>
+                    <td class="text-right tabular-nums">{{ item.program_total }}</td>
+                    <td>{% if item.is_active %}<span class="badge status-approved">Live</span>{% else %}<span class="badge status-draft">Hidden</span>{% endif %}</td>
+                    <td class="text-right"><a href="{% url 'mis_branch_profile' item.branch_id %}" class="btn btn-outline btn-sm">Manage <i data-lucide="chevron-right" class="size-4"></i></a></td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6" class="py-10 text-center muted">No branches yet. {% if is_national %}<a href="{% url 'mis_branch_create' %}" class="font-semibold text-ember-600">Create the first one</a>.{% endif %}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
